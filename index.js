@@ -1,10 +1,9 @@
 const EventEmitter = require('events')
 const Protomux = require('protomux')
 const c = require('compact-encoding')
-const codecs = require('codecs')
 
 module.exports = class ProtomuxRPC extends EventEmitter {
-  constructor (stream, { id, handshake } = {}) {
+  constructor (stream, options = {}) {
     super()
 
     this._mux = Protomux.from(stream)
@@ -14,10 +13,16 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._requests = new Map()
     this._responders = new Map()
 
+    const {
+      id,
+      handshake,
+      handshakeEncoding
+    } = options
+
     this._channel = this._mux.createChannel({
       protocol: 'protomux-rpc',
       id,
-      handshake,
+      handshake: handshake ? handshakeEncoding || c.raw : null,
       onopen: this._onopen.bind(this),
       onclose: this._onclose.bind(this),
       ondestroy: this._ondestroy.bind(this)
@@ -34,6 +39,8 @@ module.exports = class ProtomuxRPC extends EventEmitter {
       encoding: response,
       onmessage: this._onresponse.bind(this)
     })
+
+    this._channel.open(handshake)
   }
 
   _onopen (handshake) {
@@ -109,24 +116,10 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     return this._channel.closed
   }
 
-  open (handshake) {
-    this._channel.open(handshake)
-  }
-
   respond (method, options, handler) {
     if (handler === undefined) {
       handler = options
       options = {}
-    }
-
-    for (const encoding of [
-      'valueEncoding',
-      'requestEncoding',
-      'responseEncoding'
-    ]) {
-      if (options[encoding]) {
-        options = { ...options, [encoding]: c.from(codecs(options[encoding])) }
-      }
     }
 
     this._responders.set(method, { options, handler: handler || noop })
@@ -136,16 +129,6 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
   async request (method, value, options = {}) {
     if (this.closed) throw new Error('channel closed')
-
-    for (const encoding of [
-      'valueEncoding',
-      'requestEncoding',
-      'responseEncoding'
-    ]) {
-      if (options[encoding]) {
-        options = { ...options, [encoding]: c.from(codecs(options[encoding])) }
-      }
-    }
 
     const { valueEncoding, requestEncoding } = options
 

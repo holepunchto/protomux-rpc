@@ -41,8 +41,10 @@ Options include:
 {
   // Optional binary ID to identify this RPC channel
   id: buffer,
-  // Optional encoding for a handshake
-  handshake: encoding
+  // Optional handshake
+  handshake: buffer,
+  // Optional encoding for the handshake
+  handshakeEncoding: encoding
 }
 ```
 
@@ -51,10 +53,6 @@ Options include:
 Construct a new RPC channel from an existing muxer.
 
 Options are the same as above.
-
-#### `rpc.open([handshake])`
-
-Open the RPC channel.
 
 #### `rpc.respond(method[, options][, handler])`
 
@@ -66,12 +64,12 @@ Options include:
 
 ```js
 {
-  // Optional encoding for both requests and responses, defaults to binary
-  valueEncoding: 'binary' | 'json' | 'utf-8' | encoding
+  // Optional encoding for both requests and responses, defaults to raw
+  valueEncoding: encoding
   // Optional encoding for requests
-  requestEncoding: 'binary' | 'json' | 'utf-8' | encoding
+  requestEncoding: encoding
   // Optional encoding for responses
-  reponseEncoding: 'binary' | 'json' | 'utf-8' | encoding
+  reponseEncoding: encoding
 }
 ```
 
@@ -92,6 +90,18 @@ Uncork the underlying channel. See [`channel.uncork()`](https://github.com/mafin
 #### `rpc.close()`
 
 Close the RPC channel.
+
+#### `rpc.on('open', [handshake])`
+
+Emitted when the remote side adds the RPC protocol.
+
+#### `rpc.on('close')`
+
+Emitted when the RPC channel closes, i.e. when the remote side closes or rejects the RPC protocol or we closed it.
+
+#### `rpc.on('destroy')`
+
+Emitted when the RPC channel is destroyed, i.e. after `close` when all pending promises has resolved.
 
 ## License
 

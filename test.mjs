@@ -7,7 +7,6 @@ import RPC from './index.js'
 
 test('basic', async (t) => {
   const rpc = new RPC(new PassThrough())
-  rpc.open()
 
   rpc.respond('echo', (req) => req)
 
@@ -19,7 +18,6 @@ test('basic', async (t) => {
 
 test('void', async (t) => {
   const rpc = new RPC(new PassThrough())
-  rpc.open()
 
   rpc.respond('void', (req) => {
     t.is(req, null)
@@ -31,26 +29,8 @@ test('void', async (t) => {
   )
 })
 
-test('json encoding', async (t) => {
-  const rpc = new RPC(new PassThrough())
-  rpc.open()
-
-  const opts = { valueEncoding: 'json' }
-
-  rpc.respond('echo', opts, (req) => {
-    t.alike(req, { hello: 'world' })
-    return req
-  })
-
-  t.alike(
-    await rpc.request('echo', { hello: 'world' }, opts),
-    { hello: 'world' }
-  )
-})
-
 test('custom encoding', async (t) => {
   const rpc = new RPC(new PassThrough())
-  rpc.open()
 
   const opts = { valueEncoding: string }
 
@@ -67,7 +47,6 @@ test('custom encoding', async (t) => {
 
 test('custom encoding, separate', async (t) => {
   const rpc = new RPC(new PassThrough())
-  rpc.open()
 
   const opts = { requestEncoding: string, responseEncoding: uint }
 
@@ -84,14 +63,12 @@ test('custom encoding, separate', async (t) => {
 
 test('reject unknown method', async (t) => {
   const rpc = new RPC(new PassThrough())
-  rpc.open()
 
   t.exception(rpc.request('echo'), /unknown method 'echo'/)
 })
 
 test('reject request that throws', async (t) => {
   const rpc = new RPC(new PassThrough())
-  rpc.open()
 
   rpc.respond('throw', () => {
     throw new Error('whoops')
@@ -102,7 +79,6 @@ test('reject request that throws', async (t) => {
 
 test('reject request after close', async (t) => {
   const rpc = new RPC(new PassThrough())
-  rpc.open()
 
   rpc.respond('void')
   rpc.close()
@@ -112,7 +88,6 @@ test('reject request after close', async (t) => {
 
 test('reject in-progress request on close', async (t) => {
   const rpc = new RPC(new PassThrough())
-  rpc.open()
 
   rpc.respond('void')
 
@@ -127,7 +102,6 @@ test('reject in-progress request on muxer destroy', async (t) => {
   const mux = new Protomux(new PassThrough())
 
   const rpc = new RPC(mux)
-  rpc.open()
 
   rpc.respond('void')
 
@@ -141,8 +115,20 @@ test('reject in-progress request on muxer destroy', async (t) => {
 test('handshake', async (t) => {
   t.plan(1)
 
-  const rpc = new RPC(new PassThrough(), { handshake: string })
-  rpc.open('hello')
+  const rpc = new RPC(new PassThrough(), { handshake: Buffer.from('hello') })
+
+  rpc.on('open', (handshake) => {
+    t.alike(handshake, Buffer.from('hello'))
+  })
+})
+
+test('handshake, custom encoding', async (t) => {
+  t.plan(1)
+
+  const rpc = new RPC(new PassThrough(), {
+    handshake: 'hello',
+    handshakeEncoding: string
+  })
 
   rpc.on('open', (handshake) => {
     t.is(handshake, 'hello')
@@ -152,27 +138,19 @@ test('handshake', async (t) => {
 test('multiple rpcs on same muxer', async (t) => {
   const mux = new Protomux(new PassThrough())
 
-  await t.execution(() => {
-    const rpc = new RPC(mux, { id: Buffer.from('a') })
-    rpc.open()
-  })
+  await t.execution(() =>
+    new RPC(mux, { id: Buffer.from('a') })
+  )
 
-  await t.execution(() => {
-    const rpc = new RPC(mux, { id: Buffer.from('b') })
-    rpc.open()
-  })
+  await t.execution(() =>
+    new RPC(mux, { id: Buffer.from('b') })
+  )
 })
 
 test('duplicate rpcs on same muxer throws', async (t) => {
   const mux = new Protomux(new PassThrough())
 
-  await t.execution(() => {
-    const rpc = new RPC(mux)
-    rpc.open()
-  })
+  await t.execution(() => new RPC(mux))
 
-  await t.exception(() => {
-    const rpc = new RPC(mux)
-    rpc.open()
-  }, /duplicate channel/)
+  await t.exception(() => new RPC(mux), /duplicate channel/)
 })
