@@ -99,6 +99,8 @@ module.exports = class ProtomuxRPC {
     }
 
     this._responders.set(method, { opts, fn: fn || noop })
+
+    return this
   }
 
   async request (method, value, opts = {}) {
