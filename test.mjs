@@ -67,6 +67,16 @@ test('reject unknown method', async (t) => {
   t.exception(rpc.request('echo'), /unknown method 'echo'/)
 })
 
+test('reject request that throws', async (t) => {
+  const rpc = new RPC(new PassThrough())
+
+  rpc.respond('throw', () => {
+    throw new Error('whoops')
+  })
+
+  t.exception(rpc.request('throw'), /whoops/)
+})
+
 test('reject request after close', async (t) => {
   const rpc = new RPC(new PassThrough())
 
