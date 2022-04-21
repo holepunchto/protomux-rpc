@@ -77,7 +77,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
   _onresponse ({ id, error, value }) {
     const request = this._requests.get(id)
 
-    if (!request) return
+    if (request === undefined) return
 
     this._requests.delete(id)
 
