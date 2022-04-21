@@ -16,7 +16,9 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._channel = this._mux.createChannel({
       protocol: 'protomux-rpc',
       id,
-      onclose: this._onclose.bind(this)
+      onopen: this._onopen.bind(this),
+      onclose: this._onclose.bind(this),
+      ondestroy: this._ondestroy.bind(this)
     })
 
     this._request = this._channel.addMessage({
@@ -32,6 +34,10 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._channel.open()
   }
 
+  _onopen () {
+    this.emit('open')
+  }
+
   _onclose () {
     for (const request of this._requests.values()) {
       request.reject(new Error('channel closed'))
@@ -41,6 +47,10 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._responders.clear()
 
     this.emit('close')
+  }
+
+  _ondestroy () {
+    this.emit('destroy')
   }
 
   async _onrequest ({ id, method, value }) {
