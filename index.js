@@ -6,7 +6,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
   constructor (stream, { id } = {}) {
     super()
 
-    this._mux = Protomux.isProtomux(stream) ? stream : new Protomux(stream)
+    this._mux = Protomux.from(stream)
 
     this._id = 1
 
