@@ -1,0 +1,28 @@
+{
+  "name": "protomux-rpc",
+  "version": "1.0.0",
+  "description": "RPC over Protomux channels",
+  "main": "index.js",
+  "scripts": {
+    "test": "standard && brittle test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hypercore-skunkworks/protomux-rpc.git"
+  },
+  "author": "Kasper Isager Dalsgarð <kasper@funktionel.co>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hypercore-skunkworks/protomux-rpc/issues"
+  },
+  "homepage": "https://github.com/hypercore-skunkworks/protomux-rpc#readme",
+  "dependencies": {
+    "compact-encoding": "^2.6.1",
+    "protomux": "^3.2.1"
+  },
+  "devDependencies": {
+    "brittle": "^2.3.1",
+    "standard": "^16.0.3",
+    "streamx": "^2.12.4"
+  }
+}
