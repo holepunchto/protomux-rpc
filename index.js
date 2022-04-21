@@ -12,7 +12,8 @@ module.exports = class ProtomuxRPC {
 
     this._channel = this._mux.createChannel({
       protocol: 'protomux-rpc',
-      id
+      id,
+      onclose: this._onclose.bind(this)
     })
 
     this._request = this._channel.addMessage({
@@ -28,12 +29,22 @@ module.exports = class ProtomuxRPC {
     this._channel.open()
   }
 
+  _onclose () {
+    for (const request of this._requests.values()) {
+      request.reject(new Error('channel closed'))
+    }
+
+    this._requests.clear()
+    this._responders.clear()
+  }
+
   async _onrequest ({ id, method, value }) {
     let error = null
 
     const responder = this._responders.get(method)
 
-    if (responder) {
+    if (responder === undefined) error = `unknown method '${method}'`
+    else {
       const { valueEncoding } = responder.opts
 
       if (valueEncoding) {
@@ -49,8 +60,6 @@ module.exports = class ProtomuxRPC {
       if (valueEncoding) {
         value = encode(valueEncoding.response || valueEncoding, value)
       }
-    } else {
-      error = `unknown method '${method}'`
     }
 
     this._response.send({
@@ -60,7 +69,7 @@ module.exports = class ProtomuxRPC {
     })
   }
 
-  async _onresponse ({ id, error, value }) {
+  _onresponse ({ id, error, value }) {
     const request = this._requests.get(id)
 
     if (!request) return
@@ -79,37 +88,47 @@ module.exports = class ProtomuxRPC {
     }
   }
 
+  get closed () {
+    return this._channel.closed
+  }
+
   respond (method, opts, fn) {
     if (fn === undefined) {
       fn = opts
       opts = {}
     }
 
-    this._responders.set(method, { opts, fn })
+    this._responders.set(method, { opts, fn: fn || noop })
   }
 
-  request (method, value, opts = {}) {
+  async request (method, value, opts = {}) {
+    if (this.closed) throw new Error('channel closed')
+
+    const { valueEncoding } = opts
+
+    if (valueEncoding) {
+      value = encode(valueEncoding.request || valueEncoding, value)
+    }
+
+    const id = this._id++
+
+    this._request.send({ id, method, value })
+
     return new Promise((resolve, reject) => {
-      const id = this._id++
-
-      this._requests.set(id, {
-        opts,
-        resolve,
-        reject
-      })
-
-      const { valueEncoding } = opts
-
-      if (valueEncoding) {
-        value = encode(valueEncoding.request || valueEncoding, value)
-      }
-
-      this._request.send({
-        id,
-        method,
-        value
-      })
+      this._requests.set(id, { opts, resolve, reject })
     })
+  }
+
+  cork () {
+    this._channel.cork()
+  }
+
+  uncork () {
+    this._channel.uncork()
+  }
+
+  close () {
+    this._channel.close()
   }
 }
 
@@ -156,3 +175,5 @@ const response = {
     }
   }
 }
+
+function noop () {}
