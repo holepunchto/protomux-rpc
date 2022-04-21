@@ -3,7 +3,7 @@ const Protomux = require('protomux')
 const { encode, decode, buffer, uint, string } = require('compact-encoding')
 
 module.exports = class ProtomuxRPC extends EventEmitter {
-  constructor (stream, { id } = {}) {
+  constructor (stream, { id, handshake } = {}) {
     super()
 
     this._mux = Protomux.from(stream)
@@ -16,10 +16,13 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._channel = this._mux.createChannel({
       protocol: 'protomux-rpc',
       id,
+      handshake,
       onopen: this._onopen.bind(this),
       onclose: this._onclose.bind(this),
       ondestroy: this._ondestroy.bind(this)
     })
+
+    if (this._channel === null) throw new Error('duplicate channel')
 
     this._request = this._channel.addMessage({
       encoding: request,
@@ -30,12 +33,10 @@ module.exports = class ProtomuxRPC extends EventEmitter {
       encoding: response,
       onmessage: this._onresponse.bind(this)
     })
-
-    this._channel.open()
   }
 
-  _onopen () {
-    this.emit('open')
+  _onopen (handshake) {
+    this.emit('open', handshake)
   }
 
   _onclose () {
@@ -105,6 +106,10 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
   get closed () {
     return this._channel.closed
+  }
+
+  open (handshake) {
+    this._channel.open(handshake)
   }
 
   respond (method, opts, fn) {
