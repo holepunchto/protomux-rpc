@@ -1,8 +1,11 @@
+const EventEmitter = require('events')
 const Protomux = require('protomux')
 const { encode, decode, buffer, uint, string } = require('compact-encoding')
 
-module.exports = class ProtomuxRPC {
+module.exports = class ProtomuxRPC extends EventEmitter {
   constructor (stream, { id } = {}) {
+    super()
+
     this._mux = Protomux.isProtomux(stream) ? stream : new Protomux(stream)
 
     this._id = 1
@@ -36,6 +39,8 @@ module.exports = class ProtomuxRPC {
 
     this._requests.clear()
     this._responders.clear()
+
+    this.emit('close')
   }
 
   async _onrequest ({ id, method, value }) {
