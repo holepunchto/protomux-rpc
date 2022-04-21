@@ -65,9 +65,9 @@ Options include:
 ```js
 {
   // Optional encoding for both requests and responses, defaults to raw
-  valueEncoding: encoding
+  valueEncoding: encoding,
   // Optional encoding for requests
-  requestEncoding: encoding
+  requestEncoding: encoding,
   // Optional encoding for responses
   reponseEncoding: encoding
 }
