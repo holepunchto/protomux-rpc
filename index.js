@@ -1,6 +1,7 @@
 const EventEmitter = require('events')
 const Protomux = require('protomux')
-const { encode, decode, buffer, uint, string } = require('compact-encoding')
+const c = require('compact-encoding')
+const codecs = require('codecs')
 
 module.exports = class ProtomuxRPC extends EventEmitter {
   constructor (stream, { id, handshake } = {}) {
@@ -61,20 +62,20 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     if (responder === undefined) error = `unknown method '${method}'`
     else {
-      const { valueEncoding } = responder.opts
+      const { valueEncoding, requestEncoding, responseEncoding } = responder.options
 
-      if (valueEncoding) {
-        value = decode(valueEncoding.request || valueEncoding, value)
+      if (valueEncoding || requestEncoding) {
+        value = c.decode(valueEncoding || requestEncoding, value)
       }
 
       try {
-        value = await responder.fn(value)
+        value = await responder.handler(value)
       } catch (err) {
         error = err.message
       }
 
-      if (valueEncoding) {
-        value = encode(valueEncoding.response || valueEncoding, value)
+      if (valueEncoding || responseEncoding) {
+        value = c.encode(valueEncoding || responseEncoding, value)
       }
     }
 
@@ -94,10 +95,10 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     if (error) request.reject(new Error(error))
     else {
-      const { valueEncoding } = request.opts
+      const { valueEncoding, responseEncoding } = request.options
 
-      if (valueEncoding) {
-        value = decode(valueEncoding.response || valueEncoding, value)
+      if (valueEncoding || responseEncoding) {
+        value = c.decode(valueEncoding || responseEncoding, value)
       }
 
       request.resolve(value)
@@ -112,24 +113,44 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._channel.open(handshake)
   }
 
-  respond (method, opts, fn) {
-    if (fn === undefined) {
-      fn = opts
-      opts = {}
+  respond (method, options, handler) {
+    if (handler === undefined) {
+      handler = options
+      options = {}
     }
 
-    this._responders.set(method, { opts, fn: fn || noop })
+    for (const encoding of [
+      'valueEncoding',
+      'requestEncoding',
+      'responseEncoding'
+    ]) {
+      if (options[encoding]) {
+        options = { ...options, [encoding]: c.from(codecs(options[encoding])) }
+      }
+    }
+
+    this._responders.set(method, { options, handler: handler || noop })
 
     return this
   }
 
-  async request (method, value, opts = {}) {
+  async request (method, value, options = {}) {
     if (this.closed) throw new Error('channel closed')
 
-    const { valueEncoding } = opts
+    for (const encoding of [
+      'valueEncoding',
+      'requestEncoding',
+      'responseEncoding'
+    ]) {
+      if (options[encoding]) {
+        options = { ...options, [encoding]: c.from(codecs(options[encoding])) }
+      }
+    }
 
-    if (valueEncoding) {
-      value = encode(valueEncoding.request || valueEncoding, value)
+    const { valueEncoding, requestEncoding } = options
+
+    if (valueEncoding || requestEncoding) {
+      value = c.encode(valueEncoding || requestEncoding, value)
     }
 
     const id = this._id++
@@ -137,7 +158,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._request.send({ id, method, value })
 
     return new Promise((resolve, reject) => {
-      this._requests.set(id, { opts, resolve, reject })
+      this._requests.set(id, { options, resolve, reject })
     })
   }
 
@@ -156,44 +177,44 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
 const request = {
   preencode (state, m) {
-    uint.preencode(state, m.id)
-    string.preencode(state, m.method)
-    buffer.preencode(state, m.value)
+    c.uint.preencode(state, m.id)
+    c.string.preencode(state, m.method)
+    c.buffer.preencode(state, m.value)
   },
   encode (state, m) {
-    uint.encode(state, m.id)
-    string.encode(state, m.method)
-    buffer.encode(state, m.value)
+    c.uint.encode(state, m.id)
+    c.string.encode(state, m.method)
+    c.buffer.encode(state, m.value)
   },
   decode (state) {
     return {
-      id: uint.decode(state),
-      method: string.decode(state),
-      value: buffer.decode(state)
+      id: c.uint.decode(state),
+      method: c.string.decode(state),
+      value: c.buffer.decode(state)
     }
   }
 }
 
 const response = {
   preencode (state, m) {
-    uint.preencode(state, 0) // Flags
-    uint.preencode(state, m.id)
-    if (m.error) string.preencode(state, m.error)
-    else buffer.preencode(state, m.value)
+    c.uint.preencode(state, 0) // Flags
+    c.uint.preencode(state, m.id)
+    if (m.error) c.string.preencode(state, m.error)
+    else c.buffer.preencode(state, m.value)
   },
   encode (state, m) {
-    uint.encode(state, m.error ? 1 : 0)
-    uint.encode(state, m.id)
-    if (m.error) string.encode(state, m.error)
-    else buffer.encode(state, m.value)
+    c.uint.encode(state, m.error ? 1 : 0)
+    c.uint.encode(state, m.id)
+    if (m.error) c.string.encode(state, m.error)
+    else c.buffer.encode(state, m.value)
   },
   decode (state) {
-    const flags = uint.decode(state)
+    const flags = c.uint.decode(state)
 
     return {
-      id: uint.decode(state),
-      error: (flags & 1) !== 0 ? string.decode(state) : null,
-      value: (flags & 1) === 0 ? buffer.decode(state) : null
+      id: c.uint.decode(state),
+      error: (flags & 1) !== 0 ? c.string.decode(state) : null,
+      value: (flags & 1) === 0 ? c.buffer.decode(state) : null
     }
   }
 }

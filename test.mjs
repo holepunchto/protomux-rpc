@@ -31,7 +31,24 @@ test('void', async (t) => {
   )
 })
 
-test('encoding', async (t) => {
+test('json encoding', async (t) => {
+  const rpc = new RPC(new PassThrough())
+  rpc.open()
+
+  const opts = { valueEncoding: 'json' }
+
+  rpc.respond('echo', opts, (req) => {
+    t.alike(req, { hello: 'world' })
+    return req
+  })
+
+  t.alike(
+    await rpc.request('echo', { hello: 'world' }, opts),
+    { hello: 'world' }
+  )
+})
+
+test('custom encoding', async (t) => {
   const rpc = new RPC(new PassThrough())
   rpc.open()
 
@@ -48,11 +65,11 @@ test('encoding', async (t) => {
   )
 })
 
-test('encoding, separate', async (t) => {
+test('custom encoding, separate', async (t) => {
   const rpc = new RPC(new PassThrough())
   rpc.open()
 
-  const opts = { valueEncoding: { request: string, response: uint } }
+  const opts = { requestEncoding: string, responseEncoding: uint }
 
   rpc.respond('length', opts, (req) => {
     t.is(req, 'hello world')

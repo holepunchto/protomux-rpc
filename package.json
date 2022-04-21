@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/hypercore-skunkworks/protomux-rpc#readme",
   "dependencies": {
+    "codecs": "^3.0.0",
     "compact-encoding": "^2.6.1",
     "protomux": "^3.2.1"
   },
