@@ -15,6 +15,19 @@ test('basic', async (t) => {
   )
 })
 
+test('void', async (t) => {
+  const rpc = new RPC(new PassThrough())
+
+  rpc.respond('void', (req) => {
+    t.is(req, null)
+  })
+
+  t.alike(
+    await rpc.request('void'),
+    null
+  )
+})
+
 test('encoding', async (t) => {
   const rpc = new RPC(new PassThrough())
 
