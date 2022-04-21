@@ -31,7 +31,7 @@ await rpc.request('echo', Buffer.from('hello world')))
 
 ## API
 
-### `const rpc = new ProtomuxRPC(stream[, options])`
+#### `const rpc = new ProtomuxRPC(stream[, options])`
 
 Construct a new RPC channel from a framed stream.
 
@@ -46,17 +46,17 @@ Options include:
 }
 ```
 
-### `const rpc = new ProtomuxRPC(muxer[, options])`
+#### `const rpc = new ProtomuxRPC(muxer[, options])`
 
 Construct a new RPC channel from an existing muxer.
 
 Options are the same as above.
 
-### `rpc.open([handshake])`
+#### `rpc.open([handshake])`
 
 Open the RPC channel.
 
-### `rpc.respond(method[, options][, handler])`
+#### `rpc.respond(method[, options][, handler])`
 
 Register a handler for an RPC method. The handler is passed the request value and must either return the response value or throw an error.
 
@@ -75,21 +75,21 @@ Options include:
 }
 ```
 
-### `const response = await rpc.request(method[, value[, options]])`
+#### `const response = await rpc.request(method[, value[, options]])`
 
 Perform an RPC request, returning a promise that will resolve with the value returned by the request handler or reject with an error.
 
 Options are the same as above.
 
-### `rpc.cork()`
+#### `rpc.cork()`
 
 Cork the underlying channel. See [`channel.cork()`](https://github.com/mafintosh/protomux#channelcork) for more information.
 
-### `rpc.uncork()`
+#### `rpc.uncork()`
 
 Uncork the underlying channel. See [`channel.uncork()`](https://github.com/mafintosh/protomux#channeluncork) for more information.
 
-### `rpc.close()`
+#### `rpc.close()`
 
 Close the RPC channel.
 
