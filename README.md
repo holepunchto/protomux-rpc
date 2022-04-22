@@ -101,6 +101,26 @@ Emitted when the RPC channel closes, i.e. when the remote side closes or rejects
 
 Emitted when the RPC channel is destroyed, i.e. after `close` when all pending promises has resolved.
 
+## Protocol
+
+### Messages
+
+All types are specified as their corresponding [compact-encoding](https://github.com/compact-encoding) codec.
+
+#### `request` (`0`)
+
+1.  `uint` The ID of the request
+2.  `string` The method to call
+3.  `raw` The request value
+
+#### `response` (`1`)
+
+1.  `uint` Flags
+    - `error`: `1`
+2.  `uint` The ID of the request
+3.  (if `error` is set) `string` The error message
+4.  (if `error` is not set) `raw` The response value
+
 ## License
 
 ISC
