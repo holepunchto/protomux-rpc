@@ -69,11 +69,13 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     if (responder === undefined) error = `unknown method '${method}'`
     else {
-      const { valueEncoding, requestEncoding, responseEncoding } = responder.options
+      const {
+        valueEncoding,
+        requestEncoding = valueEncoding,
+        responseEncoding = valueEncoding
+      } = responder.options
 
-      if (valueEncoding || requestEncoding) {
-        value = c.decode(valueEncoding || requestEncoding, value)
-      }
+      if (requestEncoding) value = c.decode(requestEncoding, value)
 
       try {
         value = await responder.handler(value)
@@ -81,9 +83,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
         error = err.message
       }
 
-      if (valueEncoding || responseEncoding) {
-        value = c.encode(valueEncoding || responseEncoding, value)
-      }
+      if (responseEncoding) value = c.encode(responseEncoding, value)
     }
 
     this._response.send({
@@ -102,11 +102,9 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     if (error) request.reject(new Error(error))
     else {
-      const { valueEncoding, responseEncoding } = request.options
+      const { valueEncoding, responseEncoding = valueEncoding } = request.options
 
-      if (valueEncoding || responseEncoding) {
-        value = c.decode(valueEncoding || responseEncoding, value)
-      }
+      if (responseEncoding) value = c.decode(responseEncoding, value)
 
       request.resolve(value)
     }
@@ -130,11 +128,9 @@ module.exports = class ProtomuxRPC extends EventEmitter {
   async request (method, value, options = {}) {
     if (this.closed) throw new Error('channel closed')
 
-    const { valueEncoding, requestEncoding } = options
+    const { valueEncoding, requestEncoding = valueEncoding } = options
 
-    if (valueEncoding || requestEncoding) {
-      value = c.encode(valueEncoding || requestEncoding, value)
-    }
+    if (requestEncoding) value = c.encode(requestEncoding, value)
 
     const id = this._id++
 
