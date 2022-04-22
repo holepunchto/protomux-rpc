@@ -6,18 +6,18 @@ module.exports = class ProtomuxRPC extends EventEmitter {
   constructor (stream, options = {}) {
     super()
 
+    const {
+      id,
+      handshake,
+      handshakeEncoding
+    } = options
+
     this._mux = Protomux.from(stream)
 
     this._id = 1
 
     this._requests = new Map()
     this._responders = new Map()
-
-    const {
-      id,
-      handshake,
-      handshakeEncoding
-    } = options
 
     this._channel = this._mux.createChannel({
       protocol: 'protomux-rpc',
