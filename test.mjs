@@ -98,6 +98,20 @@ test('reject in-progress request on close', async (t) => {
   t.exception(req, /channel closed/)
 })
 
+test('reject in-progress request on stream destroy', async (t) => {
+  const stream = new PassThrough()
+
+  const rpc = new RPC(stream)
+
+  rpc.respond('void')
+
+  const req = rpc.request('void')
+
+  stream.destroy()
+
+  t.exception(req, /channel closed/)
+})
+
 test('reject in-progress request on muxer destroy', async (t) => {
   const mux = new Protomux(new PassThrough())
 
