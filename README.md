@@ -54,7 +54,7 @@ Construct a new RPC channel from an existing muxer.
 
 Options are the same as above.
 
-#### `rpc.respond(method[[, options], handler])`
+#### `rpc.respond(method[, options][, handler])`
 
 Register a handler for an RPC method. The handler is passed the request value and must either return the response value or throw an error.
 

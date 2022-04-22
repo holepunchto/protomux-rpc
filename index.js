@@ -115,12 +115,12 @@ module.exports = class ProtomuxRPC extends EventEmitter {
   }
 
   respond (method, options, handler) {
-    if (handler === undefined) {
+    if (typeof options === 'function') {
       handler = options
       options = {}
     }
 
-    this._responders.set(method, { options, handler: handler || noop })
+    this._responders.set(method, { options, handler })
 
     return this
   }
@@ -158,18 +158,18 @@ const request = {
   preencode (state, m) {
     c.uint.preencode(state, m.id)
     c.string.preencode(state, m.method)
-    c.buffer.preencode(state, m.value)
+    c.raw.preencode(state, m.value)
   },
   encode (state, m) {
     c.uint.encode(state, m.id)
     c.string.encode(state, m.method)
-    c.buffer.encode(state, m.value)
+    c.raw.encode(state, m.value)
   },
   decode (state) {
     return {
       id: c.uint.decode(state),
       method: c.string.decode(state),
-      value: c.buffer.decode(state)
+      value: c.raw.decode(state)
     }
   }
 }
@@ -179,13 +179,13 @@ const response = {
     c.uint.preencode(state, 0) // Flags
     c.uint.preencode(state, m.id)
     if (m.error) c.string.preencode(state, m.error)
-    else c.buffer.preencode(state, m.value)
+    else c.raw.preencode(state, m.value)
   },
   encode (state, m) {
     c.uint.encode(state, m.error ? 1 : 0)
     c.uint.encode(state, m.id)
     if (m.error) c.string.encode(state, m.error)
-    else c.buffer.encode(state, m.value)
+    else c.raw.encode(state, m.value)
   },
   decode (state) {
     const flags = c.uint.decode(state)
@@ -193,9 +193,7 @@ const response = {
     return {
       id: c.uint.decode(state),
       error: (flags & 1) !== 0 ? c.string.decode(state) : null,
-      value: (flags & 1) === 0 ? c.buffer.decode(state) : null
+      value: (flags & 1) === 0 ? c.raw.decode(state) : null
     }
   }
 }
-
-function noop () {}

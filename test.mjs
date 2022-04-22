@@ -16,19 +16,6 @@ test('basic', async (t) => {
   )
 })
 
-test('void', async (t) => {
-  const rpc = new RPC(new PassThrough())
-
-  rpc.respond('void', (req) => {
-    t.is(req, null)
-  })
-
-  t.alike(
-    await rpc.request('void'),
-    null
-  )
-})
-
 test('custom encoding', async (t) => {
   const rpc = new RPC(new PassThrough())
 
@@ -64,7 +51,7 @@ test('custom encoding, separate', async (t) => {
 test('reject unknown method', async (t) => {
   const rpc = new RPC(new PassThrough())
 
-  t.exception(rpc.request('echo'), /unknown method 'echo'/)
+  t.exception(rpc.request('echo', Buffer.alloc(0)), /unknown method 'echo'/)
 })
 
 test('reject request that throws', async (t) => {
@@ -74,24 +61,24 @@ test('reject request that throws', async (t) => {
     throw new Error('whoops')
   })
 
-  t.exception(rpc.request('throw'), /whoops/)
+  t.exception(rpc.request('throw', Buffer.alloc(0)), /whoops/)
 })
 
 test('reject request after close', async (t) => {
   const rpc = new RPC(new PassThrough())
 
-  rpc.respond('void')
+  rpc.respond('echo', (req) => req)
   rpc.close()
 
-  t.exception(rpc.request('void'), /channel closed/)
+  t.exception(rpc.request('echo', Buffer.alloc(0)), /channel closed/)
 })
 
 test('reject in-progress request on close', async (t) => {
   const rpc = new RPC(new PassThrough())
 
-  rpc.respond('void')
+  rpc.respond('echo', (req) => req)
 
-  const req = rpc.request('void')
+  const req = rpc.request('echo', Buffer.alloc(0))
 
   rpc.close()
 
@@ -103,9 +90,9 @@ test('reject in-progress request on stream destroy', async (t) => {
 
   const rpc = new RPC(stream)
 
-  rpc.respond('void')
+  rpc.respond('echo', (req) => req)
 
-  const req = rpc.request('void')
+  const req = rpc.request('echo', Buffer.alloc(0))
 
   stream.destroy()
 
@@ -117,9 +104,9 @@ test('reject in-progress request on muxer destroy', async (t) => {
 
   const rpc = new RPC(mux)
 
-  rpc.respond('void')
+  rpc.respond('echo', (req) => req)
 
-  const req = rpc.request('void')
+  const req = rpc.request('echo', Buffer.alloc(0))
 
   mux.destroy()
 
