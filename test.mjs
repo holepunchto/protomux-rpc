@@ -98,7 +98,7 @@ test('reject request after end', async (t) => {
   t.exception(rpc.request('echo', Buffer.alloc(0)), /channel closed/)
 })
 
-test('await in-progress request on end', async (t) => {
+test('await inflight request on end', async (t) => {
   const rpc = new RPC(new PassThrough())
 
   rpc.respond('echo', (req) => req)
@@ -110,7 +110,7 @@ test('await in-progress request on end', async (t) => {
   t.execution(req)
 })
 
-test('reject in-progress request on destroy', async (t) => {
+test('reject inflight request on destroy', async (t) => {
   const rpc = new RPC(new PassThrough())
 
   rpc.respond('echo', (req) => req)
@@ -122,7 +122,7 @@ test('reject in-progress request on destroy', async (t) => {
   t.exception(req, /channel destroyed/)
 })
 
-test('reject in-progress request on destroy, custom error', async (t) => {
+test('reject inflight request on destroy, custom error', async (t) => {
   const rpc = new RPC(new PassThrough())
 
   rpc.respond('echo', (req) => req)
@@ -134,7 +134,7 @@ test('reject in-progress request on destroy, custom error', async (t) => {
   t.exception(req, /whoops/)
 })
 
-test('reject in-progress request on stream destroy', async (t) => {
+test('reject inflight request on stream destroy', async (t) => {
   const stream = new PassThrough()
 
   const rpc = new RPC(stream)
@@ -148,7 +148,7 @@ test('reject in-progress request on stream destroy', async (t) => {
   t.exception(req, /channel closed/)
 })
 
-test('reject in-progress request on muxer destroy', async (t) => {
+test('reject inflight request on muxer destroy', async (t) => {
   const mux = new Protomux(new PassThrough())
 
   const rpc = new RPC(mux)
