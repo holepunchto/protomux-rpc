@@ -71,9 +71,19 @@ Options include:
 }
 ```
 
+#### `rpc.unrespond(method)`
+
+Remove a handler for an RPC method.
+
 #### `const response = await rpc.request(method, value[, options])`
 
 Perform an RPC request, returning a promise that will resolve with the value returned by the request handler or reject with an error.
+
+Options are the same as above.
+
+#### `rpc.event(method, value[, options])`
+
+Perform an RPC request but don't wait for a response.
 
 Options are the same as above.
 
@@ -85,9 +95,13 @@ Cork the underlying channel. See [`channel.cork()`](https://github.com/mafintosh
 
 Uncork the underlying channel. See [`channel.uncork()`](https://github.com/mafintosh/protomux#channeluncork) for more information.
 
-#### `rpc.close()`
+#### `await rpc.end()`
 
-Close the RPC channel.
+Gracefully end the RPC channel, waiting for all inflights requests and response handlers before closing.
+
+#### `rpc.destroy([err])`
+
+Forcefully close the RPC channel, rejecting any inflight requests.
 
 #### `rpc.on('open', [handshake])`
 
@@ -112,6 +126,8 @@ All types are specified as their corresponding [compact-encoding](https://github
 1.  `uint` The ID of the request
 2.  `string` The method to call
 3.  `raw` The request value
+
+A request ID of `0` indicates an event call and must not be responded to.
 
 #### `response` (`1`)
 

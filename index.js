@@ -15,6 +15,9 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._mux = Protomux.from(stream)
 
     this._id = 1
+    this._ending = false
+    this._error = null
+    this._responding = 0
 
     this._requests = new Map()
     this._responders = new Map()
@@ -48,8 +51,10 @@ module.exports = class ProtomuxRPC extends EventEmitter {
   }
 
   _onclose () {
+    const err = this._error || new Error('channel closed')
+
     for (const request of this._requests.values()) {
-      request.reject(new Error('channel closed'))
+      request.reject(err)
     }
 
     this._requests.clear()
@@ -77,23 +82,27 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
       if (requestEncoding) value = c.decode(requestEncoding, value)
 
+      this._responding++
+
       try {
         value = await responder.handler(value)
       } catch (err) {
         error = err.message
       }
 
-      if (responseEncoding) value = c.encode(responseEncoding, value)
+      this._responding--
+
+      if (responseEncoding && id) value = c.encode(responseEncoding, value)
     }
 
-    this._response.send({
-      id,
-      error,
-      value
-    })
+    if (id) this._response.send({ id, error, value })
+
+    this._endMaybe()
   }
 
   _onresponse ({ id, error, value }) {
+    if (id === 0) return
+
     const request = this._requests.get(id)
 
     if (request === undefined) return
@@ -108,6 +117,8 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
       request.resolve(value)
     }
+
+    this._endMaybe()
   }
 
   get closed () {
@@ -123,6 +134,10 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._responders.set(method, { options, handler })
 
     return this
+  }
+
+  unrespond (method) {
+    this._responders.delete(method)
   }
 
   async request (method, value, options = {}) {
@@ -141,6 +156,16 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     })
   }
 
+  event (method, value, options = {}) {
+    if (this.closed) throw new Error('channel closed')
+
+    const { valueEncoding, requestEncoding = valueEncoding } = options
+
+    if (requestEncoding) value = c.encode(requestEncoding, value)
+
+    this._request.send({ id: 0, method, value })
+  }
+
   cork () {
     this._channel.cork()
   }
@@ -149,7 +174,21 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._channel.uncork()
   }
 
-  close () {
+  async end () {
+    this._ending = true
+    this._endMaybe()
+
+    await EventEmitter.once(this, 'close')
+  }
+
+  _endMaybe () {
+    if (this._ending && this._responding === 0 && this._requests.size === 0) {
+      this._channel.close()
+    }
+  }
+
+  destroy (err) {
+    this._error = err || new Error('channel destroyed')
     this._channel.close()
   }
 }

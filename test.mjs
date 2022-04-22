@@ -16,6 +16,19 @@ test('basic', async (t) => {
   )
 })
 
+test('event', async (t) => {
+  t.plan(2)
+
+  const rpc = new RPC(new PassThrough())
+
+  rpc.respond('echo', (req) => {
+    t.alike(req, Buffer.from('hello world'))
+    return req
+  })
+
+  t.absent(rpc.event('echo', Buffer.from('hello world')))
+})
+
 test('custom encoding', async (t) => {
   const rpc = new RPC(new PassThrough())
 
@@ -54,6 +67,18 @@ test('reject unknown method', async (t) => {
   t.exception(rpc.request('echo', Buffer.alloc(0)), /unknown method 'echo'/)
 })
 
+test('reject method after unrespond', async (t) => {
+  const rpc = new RPC(new PassThrough())
+
+  rpc.respond('echo', (req) => req)
+
+  await t.execution(rpc.request('echo', Buffer.alloc(0)))
+
+  rpc.unrespond('echo')
+
+  await t.exception(rpc.request('echo', Buffer.alloc(0)), /unknown method 'echo'/)
+})
+
 test('reject request that throws', async (t) => {
   const rpc = new RPC(new PassThrough())
 
@@ -64,25 +89,49 @@ test('reject request that throws', async (t) => {
   t.exception(rpc.request('throw', Buffer.alloc(0)), /whoops/)
 })
 
-test('reject request after close', async (t) => {
+test('reject request after end', async (t) => {
   const rpc = new RPC(new PassThrough())
 
   rpc.respond('echo', (req) => req)
-  rpc.close()
+  rpc.end()
 
   t.exception(rpc.request('echo', Buffer.alloc(0)), /channel closed/)
 })
 
-test('reject in-progress request on close', async (t) => {
+test('await in-progress request on end', async (t) => {
   const rpc = new RPC(new PassThrough())
 
   rpc.respond('echo', (req) => req)
 
   const req = rpc.request('echo', Buffer.alloc(0))
 
-  rpc.close()
+  rpc.end()
 
-  t.exception(req, /channel closed/)
+  t.execution(req)
+})
+
+test('reject in-progress request on destroy', async (t) => {
+  const rpc = new RPC(new PassThrough())
+
+  rpc.respond('echo', (req) => req)
+
+  const req = rpc.request('echo', Buffer.alloc(0))
+
+  rpc.destroy()
+
+  t.exception(req, /channel destroyed/)
+})
+
+test('reject in-progress request on destroy, custom error', async (t) => {
+  const rpc = new RPC(new PassThrough())
+
+  rpc.respond('echo', (req) => req)
+
+  const req = rpc.request('echo', Buffer.alloc(0))
+
+  rpc.destroy(new Error('whoops'))
+
+  t.exception(req, /whoops/)
 })
 
 test('reject in-progress request on stream destroy', async (t) => {
