@@ -1,7 +1,7 @@
 import test from 'brittle'
 import Protomux from 'protomux'
 import { PassThrough } from 'streamx'
-import { string, uint } from 'compact-encoding'
+import { none, string, uint } from 'compact-encoding'
 
 import RPC from './index.js'
 
@@ -58,6 +58,21 @@ test('custom encoding, separate', async (t) => {
   t.is(
     await rpc.request('length', 'hello world', opts),
     11
+  )
+})
+
+test('void method', async (t) => {
+  const rpc = new RPC(new PassThrough())
+
+  const opts = { valueEncoding: none }
+
+  rpc.respond('echo', opts, (req) => {
+    t.is(req, null)
+  })
+
+  t.is(
+    await rpc.request('echo', undefined, opts),
+    null
   )
 })
 
