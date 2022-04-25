@@ -41,6 +41,8 @@ Options include:
 {
   // Optional binary ID to identify this RPC channel
   id: buffer,
+  // Optional default value encoding
+  valueEncoding: encoding,
   // Optional handshake
   handshake: buffer,
   // Optional encoding for the handshake

@@ -8,11 +8,13 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     const {
       id,
+      valueEncoding,
       handshake,
       handshakeEncoding
     } = options
 
     this._mux = Protomux.from(stream)
+    this._defaultValueEncoding = valueEncoding
 
     this._id = 1
     this._ending = false
@@ -75,7 +77,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     if (responder === undefined) error = `unknown method '${method}'`
     else {
       const {
-        valueEncoding,
+        valueEncoding = this._defaultValueEncoding,
         requestEncoding = valueEncoding,
         responseEncoding = valueEncoding
       } = responder.options
@@ -111,7 +113,10 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     if (error) request.reject(new Error(error))
     else {
-      const { valueEncoding, responseEncoding = valueEncoding } = request.options
+      const {
+        valueEncoding = this._defaultValueEncoding,
+        responseEncoding = valueEncoding
+      } = request.options
 
       if (responseEncoding) value = c.decode(responseEncoding, value)
 
@@ -143,7 +148,10 @@ module.exports = class ProtomuxRPC extends EventEmitter {
   async request (method, value, options = {}) {
     if (this.closed) throw new Error('channel closed')
 
-    const { valueEncoding, requestEncoding = valueEncoding } = options
+    const {
+      valueEncoding = this._defaultValueEncoding,
+      requestEncoding = valueEncoding
+    } = options
 
     if (requestEncoding) value = c.encode(requestEncoding, value)
 
@@ -159,7 +167,10 @@ module.exports = class ProtomuxRPC extends EventEmitter {
   event (method, value, options = {}) {
     if (this.closed) throw new Error('channel closed')
 
-    const { valueEncoding, requestEncoding = valueEncoding } = options
+    const {
+      valueEncoding = this._defaultValueEncoding,
+      requestEncoding = valueEncoding
+    } = options
 
     if (requestEncoding) value = c.encode(requestEncoding, value)
 

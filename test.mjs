@@ -61,17 +61,33 @@ test('custom encoding, separate', async (t) => {
   )
 })
 
+test('custom default encoding', async (t) => {
+  const rpc = new RPC(new PassThrough(), {
+    valueEncoding: string
+  })
+
+  rpc.respond('echo', (req) => {
+    t.is(req, 'hello world')
+    return req
+  })
+
+  t.is(
+    await rpc.request('echo', 'hello world'),
+    'hello world'
+  )
+})
+
 test('void method', async (t) => {
-  const rpc = new RPC(new PassThrough())
+  const rpc = new RPC(new PassThrough(), {
+    valueEncoding: none
+  })
 
-  const opts = { valueEncoding: none }
-
-  rpc.respond('echo', opts, (req) => {
+  rpc.respond('void', (req) => {
     t.is(req, null)
   })
 
   t.is(
-    await rpc.request('echo', undefined, opts),
+    await rpc.request('void'),
     null
   )
 })
