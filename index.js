@@ -143,6 +143,8 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
   unrespond (method) {
     this._responders.delete(method)
+
+    return this
   }
 
   async request (method, value, options = {}) {
