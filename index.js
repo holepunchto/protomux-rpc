@@ -96,7 +96,9 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
       this._responding--
 
-      if (responseEncoding && id) value = c.encode(responseEncoding, value)
+      if (!error && responseEncoding && id) {
+        value = c.encode(responseEncoding, value)
+      }
     }
 
     if (id) this._response.send({ id, error, value })

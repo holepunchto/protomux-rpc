@@ -61,6 +61,33 @@ test('custom encoding, separate', async (t) => {
   )
 })
 
+test('custom encoding, separate with error', async (t) => {
+  const rpc = new RPC(new PassThrough())
+
+  const responseEncoding = {
+    preencode (v) { isUint(v) && uint.preencode(state, n) },
+    encode (v) { isUint(v) && uint.encode(state, n) },
+    decode (v) { uint.decode(state, n) }
+  }
+
+  const opts = { requestEncoding: string, responseEncoding }
+
+  rpc.respond('length', opts, (req) => {
+    throw new Error('Synthetic error.')
+  })
+
+  try {
+    await rpc.request('length', 'hello world', opts)
+  } catch (e) {
+    t.is(e.message, 'Synthetic error.')
+  }
+
+  function isUint (n) {
+    if (typeof v !== 'number') throw new Error('Expected number')
+    if (n < 0) throw new Error('Expected unsigned int')
+  }
+})
+
 test('custom default encoding', async (t) => {
   const rpc = new RPC(new PassThrough(), {
     valueEncoding: string
