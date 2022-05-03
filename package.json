@@ -20,7 +20,9 @@
   },
   "homepage": "https://github.com/hypercore-skunkworks/protomux-rpc#readme",
   "dependencies": {
+    "bits-to-bytes": "^1.0.0",
     "compact-encoding": "^2.6.1",
+    "compact-encoding-bitfield": "^1.0.0",
     "protomux": "^3.2.1"
   },
   "devDependencies": {

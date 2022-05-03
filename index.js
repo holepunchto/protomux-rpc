@@ -1,6 +1,8 @@
 const EventEmitter = require('events')
 const Protomux = require('protomux')
 const c = require('compact-encoding')
+const bitfield = require('compact-encoding-bitfield')
+const bits = require('bits-to-bytes')
 
 module.exports = class ProtomuxRPC extends EventEmitter {
   constructor (stream, options = {}) {
@@ -226,26 +228,28 @@ const request = {
   }
 }
 
+const flags = bitfield(1)
+
 const response = {
   preencode (state, m) {
-    c.uint.preencode(state, 0) // Flags
+    flags.preencode(state)
     c.uint.preencode(state, m.id)
     if (m.error) c.string.preencode(state, m.error)
     else c.raw.preencode(state, m.value)
   },
   encode (state, m) {
-    c.uint.encode(state, m.error ? 1 : 0)
+    flags.encode(state, bits.of(m.error))
     c.uint.encode(state, m.id)
     if (m.error) c.string.encode(state, m.error)
     else c.raw.encode(state, m.value)
   },
   decode (state) {
-    const flags = c.uint.decode(state)
+    const [error] = bits.iterator(flags.decode(state))
 
     return {
       id: c.uint.decode(state),
-      error: (flags & 1) !== 0 ? c.string.decode(state) : null,
-      value: (flags & 1) === 0 ? c.raw.decode(state) : null
+      error: error ? c.string.decode(state) : null,
+      value: !error ? c.raw.decode(state) : null
     }
   }
 }

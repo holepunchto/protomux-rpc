@@ -133,8 +133,8 @@ A request ID of `0` indicates an event call and must not be responded to.
 
 #### `response` (`1`)
 
-1.  `uint` Flags
-    - `error`: `1`
+1.  `bitfield(1)` Flags
+    1.  `error`
 2.  `uint` The ID of the request
 3.  (if `error` is set) `string` The error message
 4.  (if `error` is not set) `raw` The response value
