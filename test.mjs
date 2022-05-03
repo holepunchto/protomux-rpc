@@ -65,9 +65,9 @@ test('custom encoding, separate with error', async (t) => {
   const rpc = new RPC(new PassThrough())
 
   const responseEncoding = {
-    preencode (v) { isUint(v) && uint.preencode(state, n) },
-    encode (v) { isUint(v) && uint.encode(state, n) },
-    decode (v) { uint.decode(state, n) }
+    preencode (state, v) { isUint(v) && uint.preencode(state, v) },
+    encode (state, v) { isUint(v) && uint.encode(state, v) },
+    decode (state) { uint.decode(state) }
   }
 
   const opts = { requestEncoding: string, responseEncoding }
