@@ -134,6 +134,14 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     return this._channel.closed
   }
 
+  get mux () {
+    return this._mux
+  }
+
+  get stream () {
+    return this._mux.stream
+  }
+
   respond (method, options, handler) {
     if (typeof options === 'function') {
       handler = options

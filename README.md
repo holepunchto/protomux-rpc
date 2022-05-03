@@ -50,11 +50,23 @@ Options include:
 }
 ```
 
-#### `const rpc = new ProtomuxRPC(muxer[, options])`
+#### `const rpc = new ProtomuxRPC(mux[, options])`
 
 Construct a new RPC channel from an existing muxer.
 
 Options are the same as `new ProtomuxRPC(stream)`.
+
+#### `rpc.closed`
+
+Whether or not the RPC channel is closed.
+
+#### `rpc.mux`
+
+The muxer used by the channel.
+
+#### `rpc.stream`
+
+The stream used by the channel.
 
 #### `rpc.respond(method[, options], handler)`
 
