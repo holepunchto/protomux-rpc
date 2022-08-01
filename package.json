@@ -11,14 +11,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/hypercore-skunkworks/protomux-rpc.git"
+    "url": "git+https://github.com/holepunchto/protomux-rpc.git"
   },
   "author": "Kasper Isager Dalsgarð <kasper@funktionel.co>",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/hypercore-skunkworks/protomux-rpc/issues"
+    "url": "https://github.com/holepunchto/protomux-rpc/issues"
   },
-  "homepage": "https://github.com/hypercore-skunkworks/protomux-rpc#readme",
+  "homepage": "https://github.com/holepunchto/protomux-rpc#readme",
   "dependencies": {
     "bits-to-bytes": "^1.0.0",
     "compact-encoding": "^2.6.1",
