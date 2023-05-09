@@ -11,7 +11,7 @@ npm install protomux-rpc
 On the server side:
 
 ```js
-const ProtomuxRPC = require('protomux-rpc')
+const ProtomuxRPC = require('@holepunchto/protomux-rpc')
 
 const rpc = new ProtomuxRPC(stream)
 
@@ -21,7 +21,7 @@ rpc.respond('echo', (req) => req)
 On the client side:
 
 ```js
-const ProtomuxRPC = require('protomux-rpc')
+const ProtomuxRPC = require('@holepunchto/protomux-rpc')
 
 const rpc = new ProtomuxRPC(stream)
 
