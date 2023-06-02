@@ -10,7 +10,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     const {
       id,
-      valueEncoding,
+      valueEncoding = c.buffer,
       handshake,
       handshakeEncoding
     } = options
