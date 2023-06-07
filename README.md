@@ -153,4 +153,4 @@ A request ID of `0` indicates an event call and must not be responded to.
 
 ## License
 
-ISC
+Apache-2.0
