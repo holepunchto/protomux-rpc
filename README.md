@@ -93,13 +93,19 @@ Remove a handler for an RPC method.
 
 Perform an RPC request, returning a promise that will resolve with the value returned by the request handler or reject with an error.
 
-Options are the same as `rpc.respond()`.
+Options are the same as `rpc.respond()` with the addition of:
+
+```js
+{
+  timeout: -1 // Optional request timeout in milliseconds
+}
+```
 
 #### `rpc.event(method, value[, options])`
 
 Perform an RPC request but don't wait for a response.
 
-Options are the same as `rpc.request()`.
+Options are the same as `rpc.respond()`.
 
 #### `rpc.cork()`
 

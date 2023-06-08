@@ -115,6 +115,8 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     this._requests.delete(id)
 
+    if (request.timeout) clearTimeout(request.timeout)
+
     if (error) request.reject(new Error(error))
     else {
       const {
@@ -126,6 +128,18 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
       request.resolve(value)
     }
+
+    this._endMaybe()
+  }
+
+  _ontimeout (id) {
+    const request = this._requests.get(id)
+
+    if (request === undefined) return
+
+    this._requests.delete(id)
+
+    request.reject(new Error('timeout exceeded'))
 
     this._endMaybe()
   }
@@ -164,7 +178,8 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     const {
       valueEncoding = this._defaultValueEncoding,
-      requestEncoding = valueEncoding
+      requestEncoding = valueEncoding,
+      timeout = -1
     } = options
 
     if (requestEncoding) value = c.encode(requestEncoding, value)
@@ -173,9 +188,12 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     this._request.send({ id, method, value })
 
-    return new Promise((resolve, reject) => {
-      this._requests.set(id, { options, resolve, reject })
-    })
+    return new Promise((resolve, reject) => this._requests.set(id, {
+      options,
+      resolve,
+      reject,
+      timeout: timeout && setTimeout(this._ontimeout.bind(this, id), timeout)
+    }))
   }
 
   event (method, value, options = {}) {
