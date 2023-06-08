@@ -192,7 +192,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
       options,
       resolve,
       reject,
-      timeout: timeout && setTimeout(this._ontimeout.bind(this, id), timeout)
+      timeout: timeout > 0 && setTimeout(this._ontimeout.bind(this, id), timeout)
     }))
   }
 
