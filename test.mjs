@@ -262,3 +262,16 @@ test('duplicate rpcs on same muxer throws', async (t) => {
 
   await t.exception(() => new RPC(mux), /duplicate channel/)
 })
+
+test('timeout', async (t) => {
+  const rpc = new RPC(new PassThrough())
+
+  rpc.respond('echo', (req) => new Promise((resolve) =>
+    setTimeout(() => resolve(req), 200)
+  ))
+
+  await t.exception(
+    () => rpc.request('echo', Buffer.from('hello world'), { timeout: 100 }),
+    /timeout exceeded/
+  )
+})
