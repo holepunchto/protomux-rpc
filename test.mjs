@@ -65,26 +65,32 @@ test('custom encoding, separate with error', async (t) => {
   const rpc = new RPC(new PassThrough())
 
   const responseEncoding = {
-    preencode (state, v) { isUint(v) && uint.preencode(state, v) },
-    encode (state, v) { isUint(v) && uint.encode(state, v) },
-    decode (state) { uint.decode(state) }
+    preencode (state, v) {
+      isUint(v) && uint.preencode(state, v)
+    },
+    encode (state, v) {
+      isUint(v) && uint.encode(state, v)
+    },
+    decode (state) {
+      uint.decode(state)
+    }
   }
 
   const opts = { requestEncoding: string, responseEncoding }
 
   rpc.respond('length', opts, (req) => {
-    throw new Error('Synthetic error.')
+    throw new Error('whoops')
   })
 
   try {
     await rpc.request('length', 'hello world', opts)
   } catch (e) {
-    t.is(e.message, 'Synthetic error.')
+    t.is(e.message, 'whoops')
   }
 
   function isUint (n) {
-    if (typeof v !== 'number') throw new Error('Expected number')
-    if (n < 0) throw new Error('Expected unsigned int')
+    if (typeof v !== 'number') throw new Error('expected number')
+    if (n < 0) throw new Error('expected unsigned int')
   }
 })
 
@@ -122,7 +128,7 @@ test('void method', async (t) => {
 test('reject unknown method', async (t) => {
   const rpc = new RPC(new PassThrough())
 
-  t.exception(rpc.request('echo', Buffer.alloc(0)), /unknown method 'echo'/)
+  await t.exception(rpc.request('echo', Buffer.alloc(0)), /unknown method 'echo'/)
 })
 
 test('reject method after unrespond', async (t) => {
@@ -144,7 +150,7 @@ test('reject request that throws', async (t) => {
     throw new Error('whoops')
   })
 
-  t.exception(rpc.request('throw', Buffer.alloc(0)), /whoops/)
+  await t.exception(rpc.request('throw', Buffer.alloc(0)), /whoops/)
 })
 
 test('reject request after end', async (t) => {
@@ -153,7 +159,7 @@ test('reject request after end', async (t) => {
   rpc.respond('echo', (req) => req)
   rpc.end()
 
-  t.exception(rpc.request('echo', Buffer.alloc(0)), /channel closed/)
+  await t.exception(rpc.request('echo', Buffer.alloc(0)), /channel closed/)
 })
 
 test('await inflight request on end', async (t) => {
@@ -165,7 +171,7 @@ test('await inflight request on end', async (t) => {
 
   rpc.end()
 
-  t.execution(req)
+  await t.execution(req)
 })
 
 test('reject inflight request on destroy', async (t) => {
@@ -177,7 +183,7 @@ test('reject inflight request on destroy', async (t) => {
 
   rpc.destroy()
 
-  t.exception(req, /channel destroyed/)
+  await t.exception(req, /channel destroyed/)
 })
 
 test('reject inflight request on destroy, custom error', async (t) => {
@@ -189,7 +195,7 @@ test('reject inflight request on destroy, custom error', async (t) => {
 
   rpc.destroy(new Error('whoops'))
 
-  t.exception(req, /whoops/)
+  await t.exception(req, /whoops/)
 })
 
 test('reject inflight request on stream destroy', async (t) => {
@@ -203,7 +209,7 @@ test('reject inflight request on stream destroy', async (t) => {
 
   stream.destroy()
 
-  t.exception(req, /channel closed/)
+  await t.exception(req, /channel closed/)
 })
 
 test('reject inflight request on muxer destroy', async (t) => {
@@ -217,7 +223,7 @@ test('reject inflight request on muxer destroy', async (t) => {
 
   mux.destroy()
 
-  t.exception(req, /channel closed/)
+  await t.exception(req, /channel closed/)
 })
 
 test('handshake', async (t) => {
