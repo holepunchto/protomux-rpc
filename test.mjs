@@ -82,11 +82,7 @@ test('custom encoding, separate with error', async (t) => {
     throw new Error('whoops')
   })
 
-  try {
-    await rpc.request('length', 'hello world', opts)
-  } catch (e) {
-    t.is(e.message, 'whoops')
-  }
+  await t.exception(rpc.request('length', 'hello world', opts), /whoops/)
 
   function isUint (n) {
     if (typeof v !== 'number') throw new Error('expected number')
@@ -278,6 +274,6 @@ test('timeout', async (t) => {
 
   await t.exception(
     () => rpc.request('echo', Buffer.from('hello world'), { timeout: 100 }),
-    /timeout exceeded/
+    /timeout of 100ms exceeded/
   )
 })

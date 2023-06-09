@@ -3,6 +3,7 @@ const Protomux = require('protomux')
 const c = require('compact-encoding')
 const bitfield = require('compact-encoding-bitfield')
 const bits = require('bits-to-bytes')
+const errors = require('./lib/errors')
 
 module.exports = class ProtomuxRPC extends EventEmitter {
   constructor (stream, options = {}) {
@@ -35,7 +36,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
       ondestroy: this._ondestroy.bind(this)
     })
 
-    if (this._channel === null) throw new Error('duplicate channel')
+    if (this._channel === null) throw errors.DUPLICATE_CHANNEL()
 
     this._request = this._channel.addMessage({
       encoding: request,
@@ -55,7 +56,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
   }
 
   _onclose () {
-    const err = this._error || new Error('channel closed')
+    const err = this._error || errors.CHANNEL_CLOSED()
 
     for (const request of this._requests.values()) {
       request.reject(err)
@@ -117,7 +118,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     if (request.timeout) clearTimeout(request.timeout)
 
-    if (error) request.reject(new Error(error))
+    if (error) request.reject(errors.REQUEST_ERROR(error))
     else {
       const {
         valueEncoding = this._defaultValueEncoding,
@@ -132,14 +133,14 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._endMaybe()
   }
 
-  _ontimeout (id) {
+  _ontimeout (id, timeout) {
     const request = this._requests.get(id)
 
     if (request === undefined) return
 
     this._requests.delete(id)
 
-    request.reject(new Error('timeout exceeded'))
+    request.reject(errors.TIMEOUT_EXCEEDED(`timeout of ${timeout}ms exceeded`))
 
     this._endMaybe()
   }
@@ -174,7 +175,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
   }
 
   async request (method, value, options = {}) {
-    if (this.closed) throw new Error('channel closed')
+    if (this.closed) throw errors.CHANNEL_CLOSED()
 
     const {
       valueEncoding = this._defaultValueEncoding,
@@ -192,12 +193,12 @@ module.exports = class ProtomuxRPC extends EventEmitter {
       options,
       resolve,
       reject,
-      timeout: timeout > 0 && setTimeout(this._ontimeout.bind(this, id), timeout)
+      timeout: timeout > 0 && setTimeout(this._ontimeout.bind(this, id, timeout), timeout)
     }))
   }
 
   event (method, value, options = {}) {
-    if (this.closed) throw new Error('channel closed')
+    if (this.closed) throw errors.CHANNEL_CLOSED()
 
     const {
       valueEncoding = this._defaultValueEncoding,
@@ -231,7 +232,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
   }
 
   destroy (err) {
-    this._error = err || new Error('channel destroyed')
+    this._error = err || errors.CHANNEL_DESTROYED()
     this._channel.close()
   }
 }

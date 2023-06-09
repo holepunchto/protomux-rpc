@@ -4,7 +4,8 @@
   "description": "RPC over Protomux channels",
   "main": "index.js",
   "files": [
-    "index.js"
+    "index.js",
+    "lib"
   ],
   "scripts": {
     "test": "standard && brittle test.mjs"
