@@ -219,10 +219,12 @@ module.exports = class ProtomuxRPC extends EventEmitter {
   }
 
   async end () {
+    const closing = EventEmitter.once(this, 'close')
+
     this._ending = true
     this._endMaybe()
 
-    await EventEmitter.once(this, 'close')
+    await closing
   }
 
   _endMaybe () {
