@@ -149,6 +149,17 @@ test('reject request that throws', async (t) => {
   await t.exception(rpc.request('throw', Buffer.alloc(0)), /whoops/)
 })
 
+test('end', async (t) => {
+  const rpc = new RPC(new PassThrough())
+
+  rpc.respond('echo', (req) => req)
+  t.alike(await rpc.request('echo', Buffer.from('hello world')), Buffer.from('hello world'))
+
+  t.is(rpc.closed, false)
+  await rpc.end()
+  t.is(rpc.closed, true)
+})
+
 test('reject request after end', async (t) => {
   const rpc = new RPC(new PassThrough())
 
