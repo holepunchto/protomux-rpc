@@ -1,6 +1,6 @@
 {
   "name": "protomux-rpc",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "RPC over Protomux channels",
   "main": "index.js",
   "files": [
