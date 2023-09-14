@@ -257,14 +257,18 @@ test('handshake, custom encoding', async (t) => {
 })
 
 test('multiple rpcs on same muxer', async (t) => {
+  t.plan(4)
+
   const mux = new Protomux(new PassThrough())
 
   await t.execution(() =>
     new RPC(mux, { id: Buffer.from('a') })
+      .on('open', () => t.pass('a opened'))
   )
 
   await t.execution(() =>
     new RPC(mux, { id: Buffer.from('b') })
+      .on('open', () => t.pass('b opened'))
   )
 })
 
