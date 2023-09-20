@@ -70,6 +70,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
   }
 
   _ondestroy () {
+    this._destroyed = true
     this.emit('destroy')
   }
 
