@@ -57,6 +57,8 @@ module.exports = class ProtomuxRPC extends EventEmitter {
   }
 
   _onclose () {
+    this._ending = Promise.resolve()
+
     const err = this._error || errors.CHANNEL_CLOSED()
 
     for (const request of this._requests.values()) {
