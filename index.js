@@ -20,7 +20,8 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._defaultValueEncoding = valueEncoding
 
     this._id = 1
-    this._ending = false
+    this._ending = null
+    this._destroyed = false
     this._error = null
     this._responding = 0
 
@@ -219,12 +220,12 @@ module.exports = class ProtomuxRPC extends EventEmitter {
   }
 
   async end () {
-    const closing = EventEmitter.once(this, 'close')
+    if (this._ending) return this._ending
 
-    this._ending = true
+    this._ending = EventEmitter.once(this, 'close')
     this._endMaybe()
 
-    await closing
+    return this._ending
   }
 
   _endMaybe () {
@@ -234,6 +235,9 @@ module.exports = class ProtomuxRPC extends EventEmitter {
   }
 
   destroy (err) {
+    if (this._destroyed) return
+    this._destroyed = true
+
     this._error = err || errors.CHANNEL_DESTROYED()
     this._channel.close()
   }
