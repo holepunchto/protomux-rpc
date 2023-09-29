@@ -41,6 +41,8 @@ Options include:
 {
   // Optional binary ID to identify this RPC channel
   id: buffer,
+  // Optional protocol name
+  protocol: 'protomux-rpc',
   // Optional default value encoding
   valueEncoding: encoding,
   // Optional handshake

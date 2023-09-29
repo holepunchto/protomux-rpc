@@ -11,6 +11,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     const {
       id,
+      protocol = 'protomux-rpc',
       valueEncoding = c.buffer,
       handshake,
       handshakeEncoding
@@ -29,7 +30,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._responders = new Map()
 
     this._channel = this._mux.createChannel({
-      protocol: 'protomux-rpc',
+      protocol,
       id,
       handshake: handshake ? handshakeEncoding || c.raw : null,
       onopen: this._onopen.bind(this),
