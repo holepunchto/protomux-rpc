@@ -3,6 +3,7 @@ const Protomux = require('protomux')
 const c = require('compact-encoding')
 const bitfield = require('compact-encoding-bitfield')
 const bits = require('bits-to-bytes')
+const safetyCatch = require('safety-catch')
 const errors = require('./lib/errors')
 
 module.exports = class ProtomuxRPC extends EventEmitter {
@@ -97,6 +98,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
       try {
         value = await responder.handler(value)
       } catch (err) {
+        safetyCatch(err)
         error = err.message
       }
 

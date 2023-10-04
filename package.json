@@ -24,7 +24,8 @@
     "bits-to-bytes": "^1.0.0",
     "compact-encoding": "^2.6.1",
     "compact-encoding-bitfield": "^1.0.0",
-    "protomux": "^3.2.1"
+    "protomux": "^3.2.1",
+    "safety-catch": "^1.0.2"
   },
   "devDependencies": {
     "brittle": "^3.3.0",
