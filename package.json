@@ -7,6 +7,12 @@
     "index.js",
     "lib"
   ],
+  "imports": {
+    "events": {
+      "bare": "bare-events",
+      "default": "events"
+    }
+  },
   "scripts": {
     "test": "standard && brittle test.mjs"
   },
@@ -26,6 +32,9 @@
     "compact-encoding-bitfield": "^1.0.0",
     "protomux": "^3.2.1",
     "safety-catch": "^1.0.2"
+  },
+  "optionalDependencies": {
+    "bare-events": "^2.2.0"
   },
   "devDependencies": {
     "brittle": "^3.3.0",
