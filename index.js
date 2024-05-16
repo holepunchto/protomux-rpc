@@ -91,21 +91,28 @@ module.exports = class ProtomuxRPC extends EventEmitter {
         responseEncoding = valueEncoding
       } = responder.options
 
-      if (requestEncoding) value = c.decode(requestEncoding, value)
-
       this._responding++
 
       try {
+        if (requestEncoding) value = c.decode(requestEncoding, value)
+
         value = await responder.handler(value)
       } catch (err) {
         safetyCatch(err)
+
         error = err.message
       }
 
       this._responding--
 
       if (!error && responseEncoding && id) {
-        value = c.encode(responseEncoding, value)
+        try {
+          value = c.encode(responseEncoding, value)
+        } catch (err) {
+          safetyCatch(err)
+
+          error = err.message
+        }
       }
     }
 
@@ -132,9 +139,15 @@ module.exports = class ProtomuxRPC extends EventEmitter {
         responseEncoding = valueEncoding
       } = request.options
 
-      if (responseEncoding) value = c.decode(responseEncoding, value)
+      try {
+        if (responseEncoding) value = c.decode(responseEncoding, value)
 
-      request.resolve(value)
+        request.resolve(value)
+      } catch (err) {
+        safetyCatch(err)
+
+        request.reject(err)
+      }
     }
 
     this._endMaybe()

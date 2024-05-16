@@ -288,7 +288,103 @@ test('timeout', async (t) => {
   ))
 
   await t.exception(
-    () => rpc.request('echo', Buffer.from('hello world'), { timeout: 100 }),
+    rpc.request('echo', Buffer.from('hello world'), { timeout: 100 }),
     /timeout of 100ms exceeded/
+  )
+})
+
+test('request encode error', async (t) => {
+  const rpc = new RPC(new PassThrough())
+
+  const requestEncoding = {
+    preencode () {},
+    encode () {
+      throw new Error('whoops')
+    },
+    decode () {}
+  }
+
+  const opts = { requestEncoding }
+
+  rpc.respond('echo', opts, () => {
+    t.fail()
+  })
+
+  await t.exception(
+    rpc.request('echo', 'hello world', opts),
+    /whoops/
+  )
+})
+
+test('request decode error', async (t) => {
+  const rpc = new RPC(new PassThrough())
+
+  const requestEncoding = {
+    preencode () {},
+    encode () {},
+    decode () {
+      throw new Error('whoops')
+    }
+  }
+
+  const opts = { requestEncoding }
+
+  rpc.respond('echo', opts, () => {
+    t.fail()
+  })
+
+  await t.exception(
+    rpc.request('echo', 'hello world', opts),
+    /whoops/
+  )
+})
+
+test('response encode error', async (t) => {
+  t.plan(2)
+
+  const rpc = new RPC(new PassThrough())
+
+  const responseEncoding = {
+    preencode () {},
+    encode () {
+      throw new Error('whoops')
+    },
+    decode () {}
+  }
+
+  const opts = { requestEncoding: string, responseEncoding }
+
+  rpc.respond('echo', opts, () => {
+    t.pass()
+  })
+
+  await t.exception(
+    rpc.request('echo', 'hello world', opts),
+    /whoops/
+  )
+})
+
+test('response decode error', async (t) => {
+  t.plan(2)
+
+  const rpc = new RPC(new PassThrough())
+
+  const responseEncoding = {
+    preencode () {},
+    encode () {},
+    decode () {
+      throw new Error('whoops')
+    }
+  }
+
+  const opts = { requestEncoding: string, responseEncoding }
+
+  rpc.respond('echo', opts, () => {
+    t.pass()
+  })
+
+  await t.exception(
+    rpc.request('echo', 'hello world', opts),
+    /whoops/
   )
 })
