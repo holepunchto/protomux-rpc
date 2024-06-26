@@ -62,6 +62,10 @@ Options are the same as `new ProtomuxRPC(stream)`.
 
 Whether or not the RPC channel is closed.
 
+#### `rpc.opened`
+
+Whether or not the RPC channel is opened.
+
 #### `rpc.mux`
 
 The muxer used by the channel.
