@@ -1,3 +1,5 @@
+import { once } from 'events'
+
 import test from 'brittle'
 import Protomux from 'protomux'
 import { PassThrough } from 'streamx'
@@ -254,6 +256,14 @@ test('handshake, custom encoding', async (t) => {
   rpc.on('open', (handshake) => {
     t.is(handshake, 'hello')
   })
+})
+
+test('opened prop', async (t) => {
+  const rpc = new RPC(new PassThrough(), { handshake: Buffer.from('hello') })
+  t.is(rpc.opened, false, 'sanity check')
+
+  await once(rpc, 'open')
+  t.is(rpc.opened, true, 'opened=true after open')
 })
 
 test('multiple rpcs on same muxer', async (t) => {
