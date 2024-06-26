@@ -294,7 +294,7 @@ test('fullyOpened', async (t) => {
   const rpc = new RPC(new PassThrough(), { handshake: Buffer.from('hello') })
 
   await rpc.fullyOpened()
-  t.is(rpc._channel.opened, true, 'channel indeed open now') // TODO: direct opened prop
+  t.is(rpc.opened, true, 'channel indeed open now')
 })
 
 test('timeout', async (t) => {
