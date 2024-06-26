@@ -290,6 +290,13 @@ test('duplicate rpcs on same muxer throws', async (t) => {
   await t.exception(() => new RPC(mux), /duplicate channel/)
 })
 
+test('fullyOpened', async (t) => {
+  const rpc = new RPC(new PassThrough(), { handshake: Buffer.from('hello') })
+
+  await rpc.fullyOpened()
+  t.is(rpc.opened, true, 'channel indeed open now')
+})
+
 test('timeout', async (t) => {
   const rpc = new RPC(new PassThrough())
 
