@@ -165,6 +165,10 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._endMaybe()
   }
 
+  get opened () {
+    return this._channel.opened
+  }
+
   get closed () {
     return this._channel.closed
   }
