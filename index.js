@@ -177,6 +177,10 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     return this._mux.stream
   }
 
+  async fullyOpened () {
+    await this._channel.fullyOpened()
+  }
+
   respond (method, options, handler) {
     if (typeof options === 'function') {
       handler = options
