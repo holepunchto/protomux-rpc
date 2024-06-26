@@ -117,6 +117,10 @@ Cork the underlying channel. See [`channel.cork()`](https://github.com/mafintosh
 
 Uncork the underlying channel. See [`channel.uncork()`](https://github.com/mafintosh/protomux#channeluncork) for more information.
 
+#### `await rpc.fullyOpened()`
+
+Resolves when the rpc is fully setup, or rejects if the setup failed.
+
 #### `await rpc.end()`
 
 Gracefully end the RPC channel, waiting for all inflights requests and response handlers before closing.
