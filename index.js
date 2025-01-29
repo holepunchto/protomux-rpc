@@ -83,7 +83,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     const responder = this._responders.get(method)
 
-    if (responder === undefined) error = new Error(`unknown method '${method}'`)
+    if (responder === undefined) error = errors.UNKNOWN_METHOD(`Unknown method '${method}'`)
     else {
       const {
         valueEncoding = this._defaultValueEncoding,
@@ -100,7 +100,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
       } catch (err) {
         safetyCatch(err)
 
-        error = err
+        error = errors.REQUEST_ERROR('Request error', err)
       }
 
       this._responding--
@@ -111,7 +111,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
         } catch (err) {
           safetyCatch(err)
 
-          error = err
+          error = errors.REQUEST_ERROR('Request error', err)
         }
       }
     }
@@ -132,7 +132,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     if (request.timeout) clearTimeout(request.timeout)
 
-    if (error) request.reject(errors.REQUEST_ERROR('Request error', error))
+    if (error) request.reject(error)
     else {
       const {
         valueEncoding = this._defaultValueEncoding,
