@@ -99,6 +99,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
         value = await responder.handler(value)
       } catch (err) {
         safetyCatch(err)
+
         error = err
       }
 
