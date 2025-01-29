@@ -83,7 +83,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     const responder = this._responders.get(method)
 
-    if (responder === undefined) error = `unknown method '${method}'`
+    if (responder === undefined) error = new Error(`unknown method '${method}'`)
     else {
       const {
         valueEncoding = this._defaultValueEncoding,
@@ -99,8 +99,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
         value = await responder.handler(value)
       } catch (err) {
         safetyCatch(err)
-
-        error = err.message
+        error = err
       }
 
       this._responding--
@@ -111,7 +110,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
         } catch (err) {
           safetyCatch(err)
 
-          error = err.message
+          error = err
         }
       }
     }
@@ -132,7 +131,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     if (request.timeout) clearTimeout(request.timeout)
 
-    if (error) request.reject(errors.REQUEST_ERROR(error))
+    if (error) request.reject(errors.REQUEST_ERROR(error.message, error.code))
     else {
       const {
         valueEncoding = this._defaultValueEncoding,
@@ -292,17 +291,34 @@ const request = {
 
 const flags = bitfield(1)
 
+const errorEnc = {
+  preencode (state, m) {
+    c.utf8.preencode(state, m.message)
+    c.utf8.preencode(state, m.code || '')
+  },
+  encode (state, m) {
+    c.utf8.encode(state, m.message)
+    c.utf8.encode(state, m.code || '')
+  },
+  decode (state) {
+    const err = new Error(`${c.utf8.decode(state)}`)
+    const codeRaw = c.utf8.decode(state)
+    err.code = codeRaw === '' ? 'REQUEST_ERROR' : codeRaw
+    return err
+  }
+}
+
 const response = {
   preencode (state, m) {
     flags.preencode(state)
     c.uint.preencode(state, m.id)
-    if (m.error) c.string.preencode(state, m.error)
+    if (m.error) errorEnc.preencode(state, m.error)
     else c.raw.preencode(state, m.value)
   },
   encode (state, m) {
     flags.encode(state, bits.of(m.error))
     c.uint.encode(state, m.id)
-    if (m.error) c.string.encode(state, m.error)
+    if (m.error) errorEnc.encode(state, m.error)
     else c.raw.encode(state, m.value)
   },
   decode (state) {
@@ -310,7 +326,7 @@ const response = {
 
     return {
       id: c.uint.decode(state),
-      error: error ? c.string.decode(state) : null,
+      error: error ? errorEnc.decode(state) : null,
       value: !error ? c.raw.decode(state) : null
     }
   }

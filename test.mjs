@@ -151,6 +151,45 @@ test('reject request that throws', async (t) => {
   await t.exception(rpc.request('throw', Buffer.alloc(0)), /whoops/)
 })
 
+test('rejected request uses custom error code if specified', async (t) => {
+  t.plan(2)
+
+  const rpc = new RPC(new PassThrough())
+
+  class CustomError extends Error {
+    constructor (msg) {
+      super(msg)
+      this.code = 'CUSTOM_ERROR_CODE'
+    }
+  }
+  rpc.respond('throw', () => {
+    throw new CustomError('whoops')
+  })
+
+  try {
+    await rpc.request('throw', Buffer.alloc(0))
+  } catch (e) {
+    t.is(e.code, 'CUSTOM_ERROR_CODE')
+    t.ok(e.message.includes('whoops'))
+  }
+})
+
+test('request that throws defaults to REQUEST_ERROR code', async (t) => {
+  t.plan(2)
+  const rpc = new RPC(new PassThrough())
+
+  rpc.respond('throw', () => {
+    throw new Error('whoops')
+  })
+
+  try {
+    await rpc.request('throw', Buffer.alloc(0))
+  } catch (e) {
+    t.is(e.code, 'REQUEST_ERROR')
+    t.ok(e.message.includes('whoops'))
+  }
+})
+
 test('end', async (t) => {
   const rpc = new RPC(new PassThrough())
 
