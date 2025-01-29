@@ -134,6 +134,7 @@ test('reject unknown method', async (t) => {
 
   try {
     await rpc.request('echo', Buffer.alloc(0))
+    t.fail()
   } catch (e) {
     t.is(e.code, 'UNKNOWN_METHOD')
   }
@@ -150,6 +151,7 @@ test('reject method after unrespond', async (t) => {
 
   try {
     await rpc.request('echo', Buffer.alloc(0))
+    t.fail()
   } catch (e) {
     t.is(e.code, 'UNKNOWN_METHOD')
   }
@@ -188,6 +190,7 @@ test('rejected request uses custom error code if specified', async (t) => {
 
   try {
     await rpc.request('throw', Buffer.alloc(0))
+    t.fail()
   } catch (e) {
     t.is(e.code, 'REQUEST_ERROR')
     t.is(e.cause.code, 'CUSTOM_ERROR_CODE')
