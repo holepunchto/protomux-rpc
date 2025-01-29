@@ -132,7 +132,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     if (request.timeout) clearTimeout(request.timeout)
 
-    if (error) request.reject(errors.REQUEST_ERROR('Request error',  error))
+    if (error) request.reject(errors.REQUEST_ERROR('Request error', error))
     else {
       const {
         valueEncoding = this._defaultValueEncoding,
@@ -324,11 +324,10 @@ const response = {
   },
   decode (state) {
     const [hasError] = bits.iterator(flags.decode(state))
-
     return {
       id: c.uint.decode(state),
       error: hasError ? error.decode(state) : null,
-      value: !error ? c.raw.decode(state) : null
+      value: !hasError ? c.raw.decode(state) : null
     }
   }
 }
