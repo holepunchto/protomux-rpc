@@ -161,11 +161,20 @@ A request ID of `0` indicates an event call and must not be responded to.
 
 #### `response` (`1`)
 
-1.  `bitfield(1)` Flags
+1.  `bitfield(3)` Flags
     1.  `error`
+    2.  `code`
+    3.  `cause`
 2.  `uint` The ID of the request
-3.  (if `error` is set) `string` The error message
-4.  (if `error` is not set) `raw` The response value
+3.  (if `error` is set)
+    1.  `string` The error message
+4.  (if `error` and `code` is set)
+    1.  `string` The error code
+5.  (if `error` and `cause` is set)
+    1.  `string` The error cause message
+    2.  `string` The error cause code
+6.  (if `error` is not set)
+    1.  `raw` The response value
 
 ## License
 
