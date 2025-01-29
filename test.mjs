@@ -123,10 +123,17 @@ test('void method', async (t) => {
   )
 })
 
-test('reject unknown method', async (t) => {
+test.solo('reject unknown method', async (t) => {
+  t.plan(3)
   const rpc = new RPC(new PassThrough())
 
-  await t.exception(rpc.request('echo', Buffer.alloc(0)), /unknown method 'echo'/)
+  try {
+    await rpc.request('echo', Buffer.alloc(0))
+  } catch (e) {
+    t.is(e.code, 'REQUEST_ERROR')
+    t.is(e.message, 'REQUEST_ERROR: Request error')
+    t.is(e.cause.message, "unknown method 'echo'")
+  }
 })
 
 test('reject method after unrespond', async (t) => {
