@@ -132,7 +132,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     if (request.timeout) clearTimeout(request.timeout)
 
-    if (error) request.reject(errors.REQUEST_ERROR(error.message, error.code))
+    if (error) request.reject(errors.REQUEST_ERROR('Request error',  error))
     else {
       const {
         valueEncoding = this._defaultValueEncoding,
@@ -292,7 +292,7 @@ const request = {
 
 const flags = bitfield(1)
 
-const errorEnc = {
+const error = {
   preencode (state, m) {
     c.utf8.preencode(state, m.message)
     c.utf8.preencode(state, m.code || '')
@@ -303,8 +303,8 @@ const errorEnc = {
   },
   decode (state) {
     const err = new Error(`${c.utf8.decode(state)}`)
-    const codeRaw = c.utf8.decode(state)
-    err.code = codeRaw === '' ? 'REQUEST_ERROR' : codeRaw
+    const code = c.utf8.decode(state)
+    if (code) err.code = code
     return err
   }
 }
@@ -313,21 +313,21 @@ const response = {
   preencode (state, m) {
     flags.preencode(state)
     c.uint.preencode(state, m.id)
-    if (m.error) errorEnc.preencode(state, m.error)
+    if (m.error) error.preencode(state, m.error)
     else c.raw.preencode(state, m.value)
   },
   encode (state, m) {
     flags.encode(state, bits.of(m.error))
     c.uint.encode(state, m.id)
-    if (m.error) errorEnc.encode(state, m.error)
+    if (m.error) error.encode(state, m.error)
     else c.raw.encode(state, m.value)
   },
   decode (state) {
-    const [error] = bits.iterator(flags.decode(state))
+    const [hasError] = bits.iterator(flags.decode(state))
 
     return {
       id: c.uint.decode(state),
-      error: error ? errorEnc.decode(state) : null,
+      error: hasError ? error.decode(state) : null,
       value: !error ? c.raw.decode(state) : null
     }
   }
