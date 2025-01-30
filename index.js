@@ -83,7 +83,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     const responder = this._responders.get(method)
 
-    if (responder === undefined) error = `unknown method '${method}'`
+    if (responder === undefined) error = errors.UNKNOWN_METHOD(`Unknown method '${method}'`)
     else {
       const {
         valueEncoding = this._defaultValueEncoding,
@@ -96,11 +96,17 @@ module.exports = class ProtomuxRPC extends EventEmitter {
       try {
         if (requestEncoding) value = c.decode(requestEncoding, value)
 
-        value = await responder.handler(value)
+        try {
+          value = await responder.handler(value)
+        } catch (err) {
+          safetyCatch(err)
+
+          error = errors.REQUEST_ERROR('Request failed', err)
+        }
       } catch (err) {
         safetyCatch(err)
 
-        error = err.message
+        error = errors.DECODE_ERROR('Could not decode request', err)
       }
 
       this._responding--
@@ -111,7 +117,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
         } catch (err) {
           safetyCatch(err)
 
-          error = err.message
+          error = errors.ENCODE_ERROR('Could not encode response', err)
         }
       }
     }
@@ -132,7 +138,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     if (request.timeout) clearTimeout(request.timeout)
 
-    if (error) request.reject(errors.REQUEST_ERROR(error))
+    if (error) request.reject(error)
     else {
       const {
         valueEncoding = this._defaultValueEncoding,
@@ -146,7 +152,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
       } catch (err) {
         safetyCatch(err)
 
-        request.reject(err)
+        request.reject(errors.DECODE_ERROR('Could not decode response', err))
       }
     }
 
@@ -295,23 +301,87 @@ const flags = bitfield(1)
 const response = {
   preencode (state, m) {
     flags.preencode(state)
+
     c.uint.preencode(state, m.id)
-    if (m.error) c.string.preencode(state, m.error)
-    else c.raw.preencode(state, m.value)
+
+    if (m.error) {
+      c.string.preencode(state, m.error.message.replace(m.error.code + ': ', ''))
+
+      if (m.error.code) c.string.preencode(state, m.error.code)
+
+      if (m.error.cause) {
+        c.string.preencode(state, m.error.cause.message)
+        c.string.preencode(state, m.error.cause.code || '')
+      }
+    } else {
+      c.raw.preencode(state, m.value)
+    }
   },
   encode (state, m) {
-    flags.encode(state, bits.of(m.error))
+    flags.encode(state, bits.of(
+      !!(m.error),
+      !!(m.error && m.error.code),
+      !!(m.error && m.error.cause)
+    ))
+
     c.uint.encode(state, m.id)
-    if (m.error) c.string.encode(state, m.error)
-    else c.raw.encode(state, m.value)
+
+    if (m.error) {
+      c.string.encode(state, m.error.message.replace(m.error.code + ': ', ''))
+
+      if (m.error.code)c.string.encode(state, m.error.code)
+
+      if (m.error.cause) {
+        c.string.encode(state, m.error.cause.message)
+        c.string.encode(state, m.error.cause.code || '')
+      }
+    } else {
+      c.raw.encode(state, m.value)
+    }
   },
   decode (state) {
-    const [error] = bits.iterator(flags.decode(state))
+    const [hasError, hasErrorCode, hasErrorCause] = bits.iterator(flags.decode(state))
+
+    const id = c.uint.decode(state)
+
+    let error = null
+    let value = null
+
+    if (hasError) {
+      const message = c.string.decode(state)
+      const code = hasErrorCode ? c.string.decode(state) : null
+
+      let cause
+      if (hasErrorCause) {
+        cause = new Error(c.string.decode(state))
+        const code = c.string.decode(state)
+        if (code) cause.code = code
+      }
+
+      switch (code) {
+        case 'UNKNOWN_METHOD':
+          error = errors.UNKNOWN_METHOD(message)
+          break
+        case 'REQUEST_ERROR':
+          error = errors.REQUEST_ERROR(message, cause)
+          break
+        case 'DECODE_ERROR':
+          error = errors.DECODE_ERROR(message, cause)
+          break
+        case 'ENCODE_ERROR':
+          error = errors.ENCODE_ERROR(message, cause)
+          break
+        default:
+          error = new Error(message, { cause })
+      }
+    } else {
+      value = c.raw.decode(state)
+    }
 
     return {
-      id: c.uint.decode(state),
-      error: error ? c.string.decode(state) : null,
-      value: !error ? c.raw.decode(state) : null
+      id,
+      error,
+      value
     }
   }
 }

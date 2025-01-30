@@ -84,7 +84,13 @@ test('custom encoding, separate with error', async (t) => {
     throw new Error('whoops')
   })
 
-  await t.exception(rpc.request('length', 'hello world', opts), /whoops/)
+  try {
+    await rpc.request('length', 'hello world', opts)
+    t.fail()
+  } catch (e) {
+    t.is(e.code, 'REQUEST_ERROR')
+    t.is(e.cause.message, 'whoops')
+  }
 
   function isUint (n) {
     if (typeof v !== 'number') throw new Error('expected number')
@@ -126,7 +132,12 @@ test('void method', async (t) => {
 test('reject unknown method', async (t) => {
   const rpc = new RPC(new PassThrough())
 
-  await t.exception(rpc.request('echo', Buffer.alloc(0)), /unknown method 'echo'/)
+  try {
+    await rpc.request('echo', Buffer.alloc(0))
+    t.fail()
+  } catch (e) {
+    t.is(e.code, 'UNKNOWN_METHOD')
+  }
 })
 
 test('reject method after unrespond', async (t) => {
@@ -138,7 +149,12 @@ test('reject method after unrespond', async (t) => {
 
   rpc.unrespond('echo')
 
-  await t.exception(rpc.request('echo', Buffer.alloc(0)), /unknown method 'echo'/)
+  try {
+    await rpc.request('echo', Buffer.alloc(0))
+    t.fail()
+  } catch (e) {
+    t.is(e.code, 'UNKNOWN_METHOD')
+  }
 })
 
 test('reject request that throws', async (t) => {
@@ -148,7 +164,37 @@ test('reject request that throws', async (t) => {
     throw new Error('whoops')
   })
 
-  await t.exception(rpc.request('throw', Buffer.alloc(0)), /whoops/)
+  try {
+    await rpc.request('throw', Buffer.alloc(0))
+    t.fail()
+  } catch (e) {
+    t.is(e.code, 'REQUEST_ERROR')
+    t.is(e.cause.message, 'whoops')
+  }
+})
+
+test('rejected request uses custom error code if specified', async (t) => {
+  t.plan(2)
+
+  const rpc = new RPC(new PassThrough())
+
+  class CustomError extends Error {
+    constructor (msg) {
+      super(msg)
+      this.code = 'CUSTOM_ERROR_CODE'
+    }
+  }
+  rpc.respond('throw', () => {
+    throw new CustomError('whoops')
+  })
+
+  try {
+    await rpc.request('throw', Buffer.alloc(0))
+    t.fail()
+  } catch (e) {
+    t.is(e.code, 'REQUEST_ERROR')
+    t.is(e.cause.code, 'CUSTOM_ERROR_CODE')
+  }
 })
 
 test('end', async (t) => {
@@ -350,14 +396,17 @@ test('request decode error', async (t) => {
     t.fail()
   })
 
-  await t.exception(
-    rpc.request('echo', 'hello world', opts),
-    /whoops/
-  )
+  try {
+    await rpc.request('echo', 'hello world', opts)
+    t.fail()
+  } catch (e) {
+    t.is(e.code, 'DECODE_ERROR')
+    t.is(e.cause.message, 'whoops')
+  }
 })
 
 test('response encode error', async (t) => {
-  t.plan(2)
+  t.plan(3)
 
   const rpc = new RPC(new PassThrough())
 
@@ -375,14 +424,17 @@ test('response encode error', async (t) => {
     t.pass()
   })
 
-  await t.exception(
-    rpc.request('echo', 'hello world', opts),
-    /whoops/
-  )
+  try {
+    await rpc.request('echo', 'hello world', opts)
+    t.fail()
+  } catch (e) {
+    t.is(e.code, 'ENCODE_ERROR')
+    t.is(e.cause.message, 'whoops')
+  }
 })
 
 test('response decode error', async (t) => {
-  t.plan(2)
+  t.plan(3)
 
   const rpc = new RPC(new PassThrough())
 
@@ -400,8 +452,11 @@ test('response decode error', async (t) => {
     t.pass()
   })
 
-  await t.exception(
-    rpc.request('echo', 'hello world', opts),
-    /whoops/
-  )
+  try {
+    await rpc.request('echo', 'hello world', opts)
+    t.fail()
+  } catch (e) {
+    t.is(e.code, 'DECODE_ERROR')
+    t.is(e.cause.message, 'whoops')
+  }
 })
