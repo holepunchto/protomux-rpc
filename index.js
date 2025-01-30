@@ -33,7 +33,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._channel = this._mux.createChannel({
       protocol,
       id,
-      handshake: handshake ? handshakeEncoding || c.raw : null,
+      handshake: (handshake != null) ? handshakeEncoding || c.raw : null,
       onopen: this._onopen.bind(this),
       onclose: this._onclose.bind(this),
       ondestroy: this._ondestroy.bind(this)
