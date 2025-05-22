@@ -357,19 +357,14 @@ test('timeout', async (t) => {
 })
 
 test('pending timeouts get cleaned up on close', async (t) => {
-  t.plan(2)
+  // This test asserts nothing, but hangs for a day during teardown for its failure case
   const rpc = new RPC(new PassThrough())
 
   rpc.respond('echo', () => {
-    return new Promise((resolve) => {
-      const timeout = [...rpc._requests.values()][0].timeout
-      t.is(timeout._destroyed, false, 'sanity check')
-      rpc.destroy() // trigger clean up logic
-      t.is(timeout._destroyed, true, 'timeout got cleaned up')
-    })
+    rpc.destroy() // trigger clean up logic
   })
 
-  const prom = rpc.request('echo', Buffer.from('hello world'), { timeout: 10_000 })
+  const prom = rpc.request('echo', Buffer.from('hello world'), { timeout: 1000 * 60 * 60 * 24 })
   prom.catch(() => {}) // error expected, since we destroy the rpc
 })
 
