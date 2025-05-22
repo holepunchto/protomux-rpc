@@ -356,6 +356,23 @@ test('timeout', async (t) => {
   )
 })
 
+test('pending timeouts get cleaned up on close', async (t) => {
+  t.plan(2)
+  const rpc = new RPC(new PassThrough())
+
+  rpc.respond('echo', () => {
+    return new Promise((resolve) => {
+      const timeout = [...rpc._requests.values()][0].timeout
+      t.is(timeout._destroyed, false, 'sanity check')
+      rpc.destroy() // trigger clean up logic
+      t.is(timeout._destroyed, true, 'timeout got cleaned up')
+    })
+  })
+
+  const prom = rpc.request('echo', Buffer.from('hello world'), { timeout: 10_000 })
+  prom.catch(() => {}) // error expected, since we destroy the rpc
+})
+
 test('request encode error', async (t) => {
   const rpc = new RPC(new PassThrough())
 
