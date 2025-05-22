@@ -65,6 +65,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     for (const request of this._requests.values()) {
       request.reject(err)
+      if (request.timeout) clearTimeout(request.timeout)
     }
 
     this._requests.clear()

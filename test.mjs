@@ -356,6 +356,18 @@ test('timeout', async (t) => {
   )
 })
 
+test('pending timeouts get cleaned up on close', async (t) => {
+  // This test asserts nothing, but hangs for a day during teardown for its failure case
+  const rpc = new RPC(new PassThrough())
+
+  rpc.respond('echo', () => {
+    rpc.destroy() // trigger clean up logic
+  })
+
+  const prom = rpc.request('echo', Buffer.from('hello world'), { timeout: 1000 * 60 * 60 * 24 })
+  prom.catch(() => {}) // error expected, since we destroy the rpc
+})
+
 test('request encode error', async (t) => {
   const rpc = new RPC(new PassThrough())
 
