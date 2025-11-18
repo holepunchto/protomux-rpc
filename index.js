@@ -5,6 +5,7 @@ const bitfield = require('compact-encoding-bitfield')
 const bits = require('bits-to-bytes')
 const safetyCatch = require('safety-catch')
 const errors = require('./lib/errors')
+const PassthroughExecutor = require('./lib/resilience/passthrough-executor')
 
 module.exports = class ProtomuxRPC extends EventEmitter {
   constructor (stream, options = {}) {
@@ -15,7 +16,9 @@ module.exports = class ProtomuxRPC extends EventEmitter {
       protocol = 'protomux-rpc',
       valueEncoding = c.buffer,
       handshake = null,
-      handshakeEncoding
+      handshakeEncoding,
+      requestControl = PassthroughExecutor.INSTANCE,
+      responseControl = PassthroughExecutor.INSTANCE
     } = options
 
     this._mux = Protomux.from(stream)
@@ -26,6 +29,8 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._destroyed = false
     this._error = null
     this._responding = 0
+    this._requestControl = requestControl
+    this._responseControl = responseControl
 
     this._requests = new Map()
     this._responders = new Map()
@@ -43,12 +48,16 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     this._request = this._channel.addMessage({
       encoding: request,
-      onmessage: this._onrequest.bind(this)
+      onmessage: (args) => {
+        return requestControl.execute(() => this._onrequest(args))
+      }
     })
 
     this._response = this._channel.addMessage({
       encoding: response,
-      onmessage: this._onresponse.bind(this)
+      onmessage: (args) => {
+        return responseControl.execute(() => this._onresponse(args))
+      }
     })
 
     this._channel.open(handshake)
@@ -76,6 +85,9 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
   _ondestroy () {
     this._destroyed = true
+    this._requestControl.destroy()
+    this._responseControl.destroy()
+
     this.emit('destroy')
   }
 
