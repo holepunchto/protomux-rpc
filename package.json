@@ -13,6 +13,11 @@
       "default": "events"
     }
   },
+  "exports": {
+    "./package": "./package.json",
+    ".": "./index.js",
+    "./errors": "./lib/errors.js"
+  },
   "scripts": {
     "test": "standard && brittle test.mjs"
   },
