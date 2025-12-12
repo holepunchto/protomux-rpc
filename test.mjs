@@ -12,10 +12,7 @@ test('basic', async (t) => {
 
   rpc.respond('echo', (req) => req)
 
-  t.alike(
-    await rpc.request('echo', Buffer.from('hello world')),
-    Buffer.from('hello world')
-  )
+  t.alike(await rpc.request('echo', Buffer.from('hello world')), Buffer.from('hello world'))
 })
 
 test('event', async (t) => {
@@ -41,10 +38,7 @@ test('custom encoding', async (t) => {
     return req
   })
 
-  t.is(
-    await rpc.request('echo', 'hello world', opts),
-    'hello world'
-  )
+  t.is(await rpc.request('echo', 'hello world', opts), 'hello world')
 })
 
 test('custom encoding, separate', async (t) => {
@@ -57,23 +51,20 @@ test('custom encoding, separate', async (t) => {
     return req.length
   })
 
-  t.is(
-    await rpc.request('length', 'hello world', opts),
-    11
-  )
+  t.is(await rpc.request('length', 'hello world', opts), 11)
 })
 
 test('custom encoding, separate with error', async (t) => {
   const rpc = new RPC(new PassThrough())
 
   const responseEncoding = {
-    preencode (state, v) {
+    preencode(state, v) {
       isUint(v) && uint.preencode(state, v)
     },
-    encode (state, v) {
+    encode(state, v) {
       isUint(v) && uint.encode(state, v)
     },
-    decode (state) {
+    decode(state) {
       uint.decode(state)
     }
   }
@@ -92,7 +83,7 @@ test('custom encoding, separate with error', async (t) => {
     t.is(e.cause.message, 'whoops')
   }
 
-  function isUint (n) {
+  function isUint(n) {
     if (typeof v !== 'number') throw new Error('expected number')
     if (n < 0) throw new Error('expected unsigned int')
   }
@@ -108,10 +99,7 @@ test('custom default encoding', async (t) => {
     return req
   })
 
-  t.is(
-    await rpc.request('echo', 'hello world'),
-    'hello world'
-  )
+  t.is(await rpc.request('echo', 'hello world'), 'hello world')
 })
 
 test('void method', async (t) => {
@@ -123,10 +111,7 @@ test('void method', async (t) => {
     t.is(req, null)
   })
 
-  t.is(
-    await rpc.request('void'),
-    null
-  )
+  t.is(await rpc.request('void'), null)
 })
 
 test('reject unknown method', async (t) => {
@@ -179,7 +164,7 @@ test('rejected request uses custom error code if specified', async (t) => {
   const rpc = new RPC(new PassThrough())
 
   class CustomError extends Error {
-    constructor (msg) {
+    constructor(msg) {
       super(msg)
       this.code = 'CUSTOM_ERROR_CODE'
     }
@@ -318,13 +303,11 @@ test('multiple rpcs on same muxer', async (t) => {
   const mux = new Protomux(new PassThrough())
 
   await t.execution(() =>
-    new RPC(mux, { id: Buffer.from('a') })
-      .on('open', () => t.pass('a opened'))
+    new RPC(mux, { id: Buffer.from('a') }).on('open', () => t.pass('a opened'))
   )
 
   await t.execution(() =>
-    new RPC(mux, { id: Buffer.from('b') })
-      .on('open', () => t.pass('b opened'))
+    new RPC(mux, { id: Buffer.from('b') }).on('open', () => t.pass('b opened'))
   )
 })
 
@@ -346,9 +329,7 @@ test('fullyOpened', async (t) => {
 test('timeout', async (t) => {
   const rpc = new RPC(new PassThrough())
 
-  rpc.respond('echo', (req) => new Promise((resolve) =>
-    setTimeout(() => resolve(req), 200)
-  ))
+  rpc.respond('echo', (req) => new Promise((resolve) => setTimeout(() => resolve(req), 200)))
 
   await t.exception(
     rpc.request('echo', Buffer.from('hello world'), { timeout: 100 }),
@@ -372,11 +353,11 @@ test('request encode error', async (t) => {
   const rpc = new RPC(new PassThrough())
 
   const requestEncoding = {
-    preencode () {},
-    encode () {
+    preencode() {},
+    encode() {
       throw new Error('whoops')
     },
-    decode () {}
+    decode() {}
   }
 
   const opts = { requestEncoding }
@@ -385,19 +366,16 @@ test('request encode error', async (t) => {
     t.fail()
   })
 
-  await t.exception(
-    rpc.request('echo', 'hello world', opts),
-    /whoops/
-  )
+  await t.exception(rpc.request('echo', 'hello world', opts), /whoops/)
 })
 
 test('request decode error', async (t) => {
   const rpc = new RPC(new PassThrough())
 
   const requestEncoding = {
-    preencode () {},
-    encode () {},
-    decode () {
+    preencode() {},
+    encode() {},
+    decode() {
       throw new Error('whoops')
     }
   }
@@ -423,11 +401,11 @@ test('response encode error', async (t) => {
   const rpc = new RPC(new PassThrough())
 
   const responseEncoding = {
-    preencode () {},
-    encode () {
+    preencode() {},
+    encode() {
       throw new Error('whoops')
     },
-    decode () {}
+    decode() {}
   }
 
   const opts = { requestEncoding: string, responseEncoding }
@@ -451,9 +429,9 @@ test('response decode error', async (t) => {
   const rpc = new RPC(new PassThrough())
 
   const responseEncoding = {
-    preencode () {},
-    encode () {},
-    decode () {
+    preencode() {},
+    encode() {},
+    decode() {
       throw new Error('whoops')
     }
   }

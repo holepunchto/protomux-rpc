@@ -7,7 +7,7 @@ const safetyCatch = require('safety-catch')
 const errors = require('./lib/errors')
 
 module.exports = class ProtomuxRPC extends EventEmitter {
-  constructor (stream, options = {}) {
+  constructor(stream, options = {}) {
     super()
 
     const {
@@ -54,11 +54,11 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._channel.open(handshake)
   }
 
-  _onopen (handshake) {
+  _onopen(handshake) {
     this.emit('open', handshake)
   }
 
-  _onclose () {
+  _onclose() {
     this._ending = Promise.resolve()
 
     const err = this._error || errors.CHANNEL_CLOSED()
@@ -74,12 +74,12 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this.emit('close')
   }
 
-  _ondestroy () {
+  _ondestroy() {
     this._destroyed = true
     this.emit('destroy')
   }
 
-  async _onrequest ({ id, method, value }) {
+  async _onrequest({ id, method, value }) {
     let error = null
 
     const responder = this._responders.get(method)
@@ -128,7 +128,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._endMaybe()
   }
 
-  _onresponse ({ id, error, value }) {
+  _onresponse({ id, error, value }) {
     if (id === 0) return
 
     const request = this._requests.get(id)
@@ -141,10 +141,8 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     if (error) request.reject(error)
     else {
-      const {
-        valueEncoding = this._defaultValueEncoding,
-        responseEncoding = valueEncoding
-      } = request.options
+      const { valueEncoding = this._defaultValueEncoding, responseEncoding = valueEncoding } =
+        request.options
 
       try {
         if (responseEncoding) value = c.decode(responseEncoding, value)
@@ -160,7 +158,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._endMaybe()
   }
 
-  _ontimeout (id, timeout) {
+  _ontimeout(id, timeout) {
     const request = this._requests.get(id)
 
     if (request === undefined) return
@@ -172,27 +170,27 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     this._endMaybe()
   }
 
-  get opened () {
+  get opened() {
     return this._channel.opened
   }
 
-  get closed () {
+  get closed() {
     return this._channel.closed
   }
 
-  get mux () {
+  get mux() {
     return this._mux
   }
 
-  get stream () {
+  get stream() {
     return this._mux.stream
   }
 
-  async fullyOpened () {
+  async fullyOpened() {
     await this._channel.fullyOpened()
   }
 
-  respond (method, options, handler) {
+  respond(method, options, handler) {
     if (typeof options === 'function') {
       handler = options
       options = {}
@@ -203,13 +201,13 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     return this
   }
 
-  unrespond (method) {
+  unrespond(method) {
     this._responders.delete(method)
 
     return this
   }
 
-  async request (method, value, options = {}) {
+  async request(method, value, options = {}) {
     if (this.closed) throw errors.CHANNEL_CLOSED()
 
     const {
@@ -224,36 +222,35 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 
     this._request.send({ id, method, value })
 
-    return new Promise((resolve, reject) => this._requests.set(id, {
-      options,
-      resolve,
-      reject,
-      timeout: timeout > 0 && setTimeout(this._ontimeout.bind(this, id, timeout), timeout)
-    }))
+    return new Promise((resolve, reject) =>
+      this._requests.set(id, {
+        options,
+        resolve,
+        reject,
+        timeout: timeout > 0 && setTimeout(this._ontimeout.bind(this, id, timeout), timeout)
+      })
+    )
   }
 
-  event (method, value, options = {}) {
+  event(method, value, options = {}) {
     if (this.closed) throw errors.CHANNEL_CLOSED()
 
-    const {
-      valueEncoding = this._defaultValueEncoding,
-      requestEncoding = valueEncoding
-    } = options
+    const { valueEncoding = this._defaultValueEncoding, requestEncoding = valueEncoding } = options
 
     if (requestEncoding) value = c.encode(requestEncoding, value)
 
     this._request.send({ id: 0, method, value })
   }
 
-  cork () {
+  cork() {
     this._channel.cork()
   }
 
-  uncork () {
+  uncork() {
     this._channel.uncork()
   }
 
-  async end () {
+  async end() {
     if (this._ending) return this._ending
 
     this._ending = EventEmitter.once(this, 'close')
@@ -262,13 +259,13 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     return this._ending
   }
 
-  _endMaybe () {
+  _endMaybe() {
     if (this._ending && this._responding === 0 && this._requests.size === 0) {
       this._channel.close()
     }
   }
 
-  destroy (err) {
+  destroy(err) {
     if (this._destroyed) return
     this._destroyed = true
 
@@ -278,17 +275,17 @@ module.exports = class ProtomuxRPC extends EventEmitter {
 }
 
 const request = {
-  preencode (state, m) {
+  preencode(state, m) {
     c.uint.preencode(state, m.id)
     c.string.preencode(state, m.method)
     c.raw.preencode(state, m.value)
   },
-  encode (state, m) {
+  encode(state, m) {
     c.uint.encode(state, m.id)
     c.string.encode(state, m.method)
     c.raw.encode(state, m.value)
   },
-  decode (state) {
+  decode(state) {
     return {
       id: c.uint.decode(state),
       method: c.string.decode(state),
@@ -300,7 +297,7 @@ const request = {
 const flags = bitfield(1)
 
 const response = {
-  preencode (state, m) {
+  preencode(state, m) {
     flags.preencode(state)
 
     c.uint.preencode(state, m.id)
@@ -318,19 +315,18 @@ const response = {
       c.raw.preencode(state, m.value)
     }
   },
-  encode (state, m) {
-    flags.encode(state, bits.of(
-      !!(m.error),
-      !!(m.error && m.error.code),
-      !!(m.error && m.error.cause)
-    ))
+  encode(state, m) {
+    flags.encode(
+      state,
+      bits.of(!!m.error, !!(m.error && m.error.code), !!(m.error && m.error.cause))
+    )
 
     c.uint.encode(state, m.id)
 
     if (m.error) {
       c.string.encode(state, m.error.message.replace(m.error.code + ': ', ''))
 
-      if (m.error.code)c.string.encode(state, m.error.code)
+      if (m.error.code) c.string.encode(state, m.error.code)
 
       if (m.error.cause) {
         c.string.encode(state, m.error.cause.message)
@@ -340,7 +336,7 @@ const response = {
       c.raw.encode(state, m.value)
     }
   },
-  decode (state) {
+  decode(state) {
     const [hasError, hasErrorCode, hasErrorCause] = bits.iterator(flags.decode(state))
 
     const id = c.uint.decode(state)
