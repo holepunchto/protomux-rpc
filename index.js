@@ -311,6 +311,8 @@ const response = {
         c.string.preencode(state, m.error.cause.message)
         c.string.preencode(state, m.error.cause.code || '')
       }
+
+      if (m.error.context) c.string.preencode(state, m.error.context)
     } else {
       c.raw.preencode(state, m.value)
     }
@@ -318,7 +320,12 @@ const response = {
   encode(state, m) {
     flags.encode(
       state,
-      bits.of(!!m.error, !!(m.error && m.error.code), !!(m.error && m.error.cause))
+      bits.of(
+        !!m.error,
+        !!(m.error && m.error.code),
+        !!(m.error && m.error.cause),
+        !!(m.error && m.error.context)
+      )
     )
 
     c.uint.encode(state, m.id)
@@ -332,12 +339,16 @@ const response = {
         c.string.encode(state, m.error.cause.message)
         c.string.encode(state, m.error.cause.code || '')
       }
+
+      if (m.error.context) c.string.encontext(state, m.error.context)
     } else {
       c.raw.encode(state, m.value)
     }
   },
   decode(state) {
-    const [hasError, hasErrorCode, hasErrorCause] = bits.iterator(flags.decode(state))
+    const [hasError, hasErrorCode, hasErrorCause, hasErrorContext] = bits.iterator(
+      flags.decode(state)
+    )
 
     const id = c.uint.decode(state)
 
@@ -355,12 +366,14 @@ const response = {
         if (code) cause.code = code
       }
 
+      const context = hasErrorContext ? c.string.decode(state) : null
+
       switch (code) {
         case 'UNKNOWN_METHOD':
           error = errors.UNKNOWN_METHOD(message)
           break
         case 'REQUEST_ERROR':
-          error = errors.REQUEST_ERROR(message, cause)
+          error = errors.REQUEST_ERROR(message, cause, context)
           break
         case 'DECODE_ERROR':
           error = errors.DECODE_ERROR(message, cause)
