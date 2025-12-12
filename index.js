@@ -102,7 +102,13 @@ module.exports = class ProtomuxRPC extends EventEmitter {
         } catch (err) {
           safetyCatch(err)
 
-          error = errors.REQUEST_ERROR('Request failed', err)
+          // for RPCError, just pass it through
+          if (err.name === 'RPCError') {
+            error = err
+          } else {
+            // do not include unexpected error in REQUEST_ERROR, prevent it to show the detail error in client
+            error = errors.REQUEST_ERROR('Request failed')
+          }
         }
       } catch (err) {
         safetyCatch(err)
@@ -314,6 +320,8 @@ const response = {
         c.string.preencode(state, m.error.cause.message)
         c.string.preencode(state, m.error.cause.code || '')
       }
+
+      if (m.error.requestId) c.string.preencode(state, m.error.requestId)
     } else {
       c.raw.preencode(state, m.value)
     }
@@ -322,7 +330,8 @@ const response = {
     flags.encode(state, bits.of(
       !!(m.error),
       !!(m.error && m.error.code),
-      !!(m.error && m.error.cause)
+      !!(m.error && m.error.cause),
+      !!(m.error && m.error.requestId)
     ))
 
     c.uint.encode(state, m.id)
@@ -336,12 +345,14 @@ const response = {
         c.string.encode(state, m.error.cause.message)
         c.string.encode(state, m.error.cause.code || '')
       }
+
+      if (m.error.requestId) c.string.encode(state, m.error.requestId)
     } else {
       c.raw.encode(state, m.value)
     }
   },
   decode (state) {
-    const [hasError, hasErrorCode, hasErrorCause] = bits.iterator(flags.decode(state))
+    const [hasError, hasErrorCode, hasErrorCause, hasErrorRequestId] = bits.iterator(flags.decode(state))
 
     const id = c.uint.decode(state)
 
@@ -375,6 +386,8 @@ const response = {
         default:
           error = new Error(message, { cause })
       }
+
+      if (hasErrorRequestId) error.requestId = c.string.decode(state)
     } else {
       value = c.raw.decode(state)
     }
