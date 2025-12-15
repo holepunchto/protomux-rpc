@@ -174,8 +174,8 @@ A request ID of `0` indicates an event call and must not be responded to.
 5.  (if `error` and `cause` is set)
     1.  `string` The error cause message
     2.  `string` The error cause code
-6.  (if `error` and `context` is set)
-    1.  `string` The error context
+6.  (if `error`, `cause`, and `context` is set)
+    1.  `string` The error cause context
 7.  (if `error` is not set)
     1.  `raw` The response value
 
