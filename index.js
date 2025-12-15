@@ -308,8 +308,12 @@ const response = {
       if (m.error.code) c.string.preencode(state, m.error.code)
 
       if (m.error.cause) {
-        c.string.preencode(state, m.error.cause.message)
-        c.string.preencode(state, m.error.cause.code || '')
+        const cause = m.error.cause
+
+        c.string.preencode(state, cause.message)
+        c.string.preencode(state, cause.code || '')
+
+        if (cause.context) c.string.preencode(state, cause.context)
       }
     } else {
       c.raw.preencode(state, m.value)
@@ -318,7 +322,12 @@ const response = {
   encode(state, m) {
     flags.encode(
       state,
-      bits.of(!!m.error, !!(m.error && m.error.code), !!(m.error && m.error.cause))
+      bits.of(
+        !!m.error,
+        !!(m.error && m.error.code),
+        !!(m.error && m.error.cause),
+        !!(m.error && m.error.cause && m.error.cause.context)
+      )
     )
 
     c.uint.encode(state, m.id)
@@ -329,15 +338,21 @@ const response = {
       if (m.error.code) c.string.encode(state, m.error.code)
 
       if (m.error.cause) {
-        c.string.encode(state, m.error.cause.message)
-        c.string.encode(state, m.error.cause.code || '')
+        const cause = m.error.cause
+
+        c.string.encode(state, cause.message)
+        c.string.encode(state, cause.code || '')
+
+        if (cause.context) c.string.encode(state, cause.context)
       }
     } else {
       c.raw.encode(state, m.value)
     }
   },
   decode(state) {
-    const [hasError, hasErrorCode, hasErrorCause] = bits.iterator(flags.decode(state))
+    const [hasError, hasErrorCode, hasErrorCause, hasErrorContext] = bits.iterator(
+      flags.decode(state)
+    )
 
     const id = c.uint.decode(state)
 
@@ -351,8 +366,12 @@ const response = {
       let cause
       if (hasErrorCause) {
         cause = new Error(c.string.decode(state))
+
         const code = c.string.decode(state)
         if (code) cause.code = code
+
+        const context = hasErrorContext ? c.string.decode(state) : null
+        if (context) cause.context = context
       }
 
       switch (code) {
