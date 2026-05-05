@@ -33,7 +33,7 @@
   "homepage": "https://github.com/holepunchto/protomux-rpc#readme",
   "dependencies": {
     "bits-to-bytes": "^1.0.0",
-    "compact-encoding": "^2.6.1",
+    "compact-encoding": "^3.0.0",
     "compact-encoding-bitfield": "^1.0.0",
     "protomux": "^3.7.0",
     "safety-catch": "^1.0.2"
