@@ -13,7 +13,7 @@ module.exports = class ProtomuxRPC extends EventEmitter {
     const {
       id,
       protocol = 'protomux-rpc',
-      valueEncoding = c.buffer,
+      valueEncoding = c.optionalBuffer,
       handshake = null,
       handshakeEncoding
     } = options
