@@ -178,6 +178,24 @@ test('rejected request with error code', async (t) => {
   }
 })
 
+test('rejected request stringifies non-string error code', async (t) => {
+  const rpc = new RPC(new PassThrough())
+
+  rpc.respond('throw', () => {
+    const err = new Error('whoops')
+    err.code = 1
+    throw err
+  })
+
+  try {
+    await rpc.request('throw', Buffer.alloc(0))
+    t.fail()
+  } catch (e) {
+    t.is(e.code, 'REQUEST_ERROR')
+    t.is(e.cause.code, '1')
+  }
+})
+
 test('rejected request with error context', async (t) => {
   t.plan(2)
 
