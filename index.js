@@ -311,7 +311,7 @@ const response = {
         const cause = m.error.cause
 
         c.string.preencode(state, cause.message)
-        c.string.preencode(state, cause.code ? String(cause.code) : '')
+        c.string.preencode(state, String(cause.code ?? ''))
 
         if (cause.context) c.string.preencode(state, cause.context)
       }
@@ -341,7 +341,7 @@ const response = {
         const cause = m.error.cause
 
         c.string.encode(state, cause.message)
-        c.string.encode(state, cause.code ? String(cause.code) : '')
+        c.string.encode(state, String(cause.code ?? ''))
 
         if (cause.context) c.string.encode(state, cause.context)
       }
